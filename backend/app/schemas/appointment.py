@@ -3,6 +3,8 @@ from typing import Optional, List
 from datetime import datetime, date
 from enum import Enum
 
+from app.schemas.diagnosis import DiagnosisOut
+
 
 class AppointmentStatusEnum(str, Enum):
     pending = "pending"
@@ -40,6 +42,7 @@ class AppointmentOut(BaseModel):
     booked_at: datetime
     symptoms_text: Optional[str] = None
     terms_accepted: bool
+    diagnosis: Optional[DiagnosisOut] = None
 
     model_config = {"from_attributes": True}
 

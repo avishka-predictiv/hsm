@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
+from sqlalchemy.orm import selectinload
 from typing import List
 from datetime import datetime, timezone, timedelta
 import uuid, os, aiofiles
@@ -105,6 +106,7 @@ async def upcoming_appointments(
     from datetime import date
     result = await db.execute(
         select(Appointment)
+        .options(selectinload(Appointment.diagnosis))
         .join(Session)
         .where(
             Appointment.patient_id == patient.id,
@@ -128,6 +130,7 @@ async def appointment_history(
 
     result = await db.execute(
         select(Appointment)
+        .options(selectinload(Appointment.diagnosis))
         .join(Session)
         .where(
             Appointment.patient_id == patient.id,
