@@ -29,6 +29,7 @@ import DoctorHome from "./pages/doctor/DoctorHome";
 import DoctorProfilePage from "./pages/doctor/DoctorProfilePage";
 import TodaySessions from "./pages/doctor/TodaySessions";
 import CurrentSession from "./pages/doctor/CurrentSession";
+import SessionHistory from "./pages/doctor/SessionHistory";
 
 // Admin
 import AdminLayout from "./pages/admin/AdminLayout";
@@ -102,6 +103,8 @@ export default function App() {
             {/* Doctor */}
             <Route path="/doctor" element={<ProtectedRoute allowedRoles={["doctor"]}><DoctorLayout /></ProtectedRoute>}>
               <Route index element={<DoctorHome />} />
+              <Route path="appointments" element={<SessionHistory />} />
+              <Route path="schedule" element={<DoctorProfilePage />} />
               <Route path="profile" element={<DoctorProfilePage />} />
               <Route path="today" element={<TodaySessions />} />
               <Route path="session/:id" element={<CurrentSession />} />

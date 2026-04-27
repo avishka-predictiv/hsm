@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { authApi, specializationApi } from "../../api";
@@ -92,11 +92,18 @@ function DoctorForm({ onSubmit, loading }) {
 }
 
 export default function CompleteProfile() {
-  const { user, loadUser } = useAuth();
+  const { user, setUser, loadUser, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const role = user?.role || location.state?.role || "patient";
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    // If user is already complete, don't let them get stuck here.
+    if (user?.profile_complete) {
+      navigate(user.role === "doctor" ? "/doctor" : "/patient", { replace: true });
+    }
+  }, [user, navigate]);
 
   const submit = async (data) => {
     setLoading(true);
@@ -110,9 +117,16 @@ export default function CompleteProfile() {
       );
       if (role === "patient") await authApi.completePatientProfile(clean);
       else await authApi.completeDoctorProfile(clean);
-      await loadUser();
+
+      // Avoid a redirect "bounce" where ProtectedRoute still sees the old
+      // user state (profile_complete: false) during navigation.
+      setUser((prev) => (prev ? { ...prev, role, profile_complete: true } : prev));
+
       toast.success("Profile completed!");
       navigate(role === "doctor" ? "/doctor" : "/patient", { replace: true });
+
+      // Refresh user state in the background (don't block navigation).
+      loadUser();
     } catch (err) {
       const detail = err.response?.data?.detail;
       const msg = Array.isArray(detail)
@@ -139,7 +153,28 @@ export default function CompleteProfile() {
           <p className="text-fg-subtle text-sm mb-6">
             {role === "patient" ? "Tell us a bit about yourself to personalize your experience." : "Set up your doctor profile to appear in searches and accept bookings."}
           </p>
-          {role === "patient" ? <PatientForm onSubmit={submit} loading={loading} /> : <DoctorForm onSubmit={submit} loading={loading} />}
+          {!user ? (
+            <div className="space-y-4">
+              <div className="card card-p">
+                You’re not signed in. Please log in to complete your profile.
+              </div>
+              <button className="btn-primary w-full justify-center py-3" type="button" onClick={() => navigate("/login", { replace: true })}>
+                Go to Login
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {role === "patient" ? <PatientForm onSubmit={submit} loading={loading} /> : <DoctorForm onSubmit={submit} loading={loading} />}
+              <button
+                type="button"
+                disabled={loading}
+                className="btn-secondary w-full justify-center py-3"
+                onClick={() => { logout(); navigate("/login", { replace: true }); }}
+              >
+                Cancel
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

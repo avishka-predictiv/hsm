@@ -4,14 +4,14 @@ import { useAuth } from "../../context/AuthContext";
 
 export default function OAuthCallback() {
   const [params] = useSearchParams();
-  const { loginWithTokens, loadUser } = useAuth();
+  const { loadUser } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
     const access = params.get("access_token");
     const refresh = params.get("refresh_token");
     const profileComplete = params.get("profile_complete") === "true";
-    const role = params.get("role");
+    const role = params.get("role") || "patient";
 
     if (!access) { navigate("/login"); return; }
 
@@ -20,12 +20,12 @@ export default function OAuthCallback() {
 
     loadUser().then(() => {
       if (!profileComplete) {
-        navigate("/complete-profile", { state: { role } });
+        navigate("/complete-profile", { state: { role }, replace: true });
       } else {
-        navigate(role === "doctor" ? "/doctor" : role === "admin" ? "/admin" : "/patient");
+        navigate(role === "doctor" ? "/doctor" : role === "admin" ? "/admin" : "/patient", { replace: true });
       }
     });
-  }, []);
+  }, [params, loadUser, navigate]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-app">

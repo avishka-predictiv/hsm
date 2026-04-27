@@ -16,6 +16,7 @@ export function AuthProvider({ children }) {
     } catch {
       localStorage.removeItem("access_token");
       localStorage.removeItem("refresh_token");
+      setUser(null);
     } finally {
       setLoading(false);
     }
@@ -27,12 +28,14 @@ export function AuthProvider({ children }) {
     localStorage.setItem("access_token", accessToken);
     localStorage.setItem("refresh_token", refreshToken);
     setUser(userData);
+    setLoading(false);
   }, []);
 
   const logout = useCallback(() => {
     localStorage.removeItem("access_token");
     localStorage.removeItem("refresh_token");
     setUser(null);
+    setLoading(false);
   }, []);
 
   return (

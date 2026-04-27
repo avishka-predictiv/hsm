@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { useAuth } from "../../context/AuthContext";
-import { Navigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import ThemeToggle from "../../components/ThemeToggle";
 import Ico from "../../components/Ico";
+import { authApi } from "../../api";
+import toast from "react-hot-toast";
 
 const GOOGLE_AUTH_URL = (role) =>
   `${import.meta.env.VITE_API_URL || "http://localhost:8000/api/v1"}/auth/google?role=${role}`;
@@ -44,10 +46,34 @@ function FeatureCard({ icon, color, title, desc }) {
 }
 
 export default function Landing() {
-  const { user } = useAuth();
+  const { user, loginWithTokens } = useAuth();
   const [activeTab, setActiveTab] = useState("patient");
+  const [mode, setMode] = useState("login"); // login | signup
+  const [form, setForm] = useState({ email: "", password: "" });
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   if (user) return <Navigate to="/" replace />;
+
+  const submit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const payload = { email: form.email, password: form.password, role: activeTab };
+      const { data } = mode === "signup" ? await authApi.register(payload) : await authApi.login(payload);
+      loginWithTokens(data.access_token, data.refresh_token, data.user);
+      toast.success(mode === "signup" ? "Account created!" : "Welcome back!");
+      if (!data.user?.profile_complete) {
+        navigate("/complete-profile", { state: { role: activeTab }, replace: true });
+      } else {
+        navigate(activeTab === "doctor" ? "/doctor" : "/patient", { replace: true });
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.detail || "Authentication failed");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="hero-bg" style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: 32, position: "relative" }}>
@@ -88,7 +114,9 @@ export default function Landing() {
         <div style={{ background: "var(--panel)", border: "1px solid var(--border)", borderRadius: 20, padding: 34, boxShadow: "var(--shadow-lg)" }}>
           <div style={{ marginBottom: 24 }}>
             <div style={{ fontSize: 20, fontWeight: 750, marginBottom: 5, color: "var(--ink)" }}>Sign in to HMS</div>
-            <div style={{ fontSize: 13, color: "var(--ink-mute)", lineHeight: 1.5 }}>Select your role and sign in with your Google account.</div>
+            <div style={{ fontSize: 13, color: "var(--ink-mute)", lineHeight: 1.5 }}>
+              Select your role. Use email & password or continue with Google.
+            </div>
           </div>
 
           <div style={{ display: "flex", background: "var(--muted)", borderRadius: 10, padding: 3, marginBottom: 24 }}>
@@ -120,6 +148,40 @@ export default function Landing() {
             {activeTab === "patient"
               ? "Book appointments, view medical history, and manage your health records."
               : "Manage your schedule, run live consultation sessions, and record diagnoses."}
+          </div>
+
+          <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+            {["login", "signup"].map((m) => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => setMode(m)}
+                className={m === mode ? "btn btn-primary" : "btn btn-secondary"}
+                style={{ flex: 1, justifyContent: "center" }}
+              >
+                {m === "login" ? "Login" : "Sign up"}
+              </button>
+            ))}
+          </div>
+
+          <form onSubmit={submit} className="space-y-3" style={{ marginBottom: 14 }}>
+            <div>
+              <label className="label">Email</label>
+              <input className="input" type="email" required value={form.email} onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))} placeholder="you@example.com" />
+            </div>
+            <div>
+              <label className="label">Password</label>
+              <input className="input" type="password" required value={form.password} onChange={(e) => setForm((p) => ({ ...p, password: e.target.value }))} placeholder="••••••••" />
+            </div>
+            <button type="submit" className="btn btn-mint" disabled={loading} style={{ width: "100%", justifyContent: "center" }}>
+              {loading ? (mode === "signup" ? "Creating..." : "Signing in...") : (mode === "signup" ? "Create account" : "Sign in")}
+            </button>
+          </form>
+
+          <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "10px 0 14px" }}>
+            <div style={{ height: 1, background: "var(--border)", flex: 1 }} />
+            <div style={{ fontSize: 11.5, color: "var(--ink-mute)" }}>OR</div>
+            <div style={{ height: 1, background: "var(--border)", flex: 1 }} />
           </div>
 
           <a

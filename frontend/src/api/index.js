@@ -41,6 +41,8 @@ export default api;
 export const authApi = {
   me: () => api.get("/auth/me"),
   adminLogin: (email, password) => api.post("/auth/admin/login", { email, password }),
+  register: (data) => api.post("/auth/register", data),
+  login: (data) => api.post("/auth/login", data),
   completePatientProfile: (data) => api.post("/auth/complete-profile/patient", data),
   completeDoctorProfile: (data) => api.post("/auth/complete-profile/doctor", data),
   refresh: (token) => api.post("/auth/refresh", { refresh_token: token }),

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, createSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { doctorApi, specializationApi } from "../../api";
@@ -15,6 +15,7 @@ function formatCurrencyLKR(n) {
 export default function FindDoctors() {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [specId, setSpecId] = useState("");
 
   const { data: specs = [] } = useQuery({
@@ -22,14 +23,19 @@ export default function FindDoctors() {
     queryFn: () => specializationApi.list().then((r) => r.data),
   });
 
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 300);
+    return () => clearTimeout(t);
+  }, [search]);
+
   const queryParams = useMemo(() => {
     const params = {};
-    if (search.trim()) params.name = search.trim();
+    if (debouncedSearch.trim()) params.name = debouncedSearch.trim();
     if (specId) params.specialization_id = Number(specId);
     params.page = 1;
     params.size = 24;
     return params;
-  }, [search, specId]);
+  }, [debouncedSearch, specId]);
 
   const { data: doctors = [], isLoading } = useQuery({
     queryKey: ["doctors", queryParams],
@@ -45,7 +51,7 @@ export default function FindDoctors() {
           <div style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}>
             <Ico n="search" size={15} color="var(--ink-mute)" />
           </div>
-          <input className="input" style={{ paddingLeft: 36 }} placeholder="Search by name…" value={search} onChange={(e) => setSearch(e.target.value)} />
+          <input className="input" style={{ paddingLeft: 36 }} placeholder="Search by doctor email or bio…" value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
 
         <div style={{ minWidth: 220 }}>
