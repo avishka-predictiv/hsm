@@ -90,7 +90,13 @@ async def book_appointment(
     )
     db.add(appointment)
     await db.flush()
-    return appointment
+    # Re-load with relationships to avoid async lazy-load during response serialization
+    loaded = await db.execute(
+        select(Appointment)
+        .options(selectinload(Appointment.diagnosis))
+        .where(Appointment.id == appointment.id)
+    )
+    return loaded.scalar_one()
 
 
 @router.get("/upcoming", response_model=List[AppointmentOut])
