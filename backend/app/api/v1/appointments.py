@@ -90,6 +90,13 @@ async def book_appointment(
     )
     db.add(appointment)
     await db.flush()
+
+    result = await db.execute(
+        select(Appointment)
+        .options(selectinload(Appointment.diagnosis))
+        .where(Appointment.id == appointment.id)
+    )
+    appointment = result.scalar_one()
     return appointment
 
 
