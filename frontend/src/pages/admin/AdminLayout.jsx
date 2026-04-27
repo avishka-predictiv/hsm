@@ -1,16 +1,18 @@
 import { Outlet, NavLink, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Users, Calendar, CreditCard, List, Settings, FileText, LogOut, Shield } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import ThemeToggle from "../../components/ThemeToggle";
+import Ico from "../../components/Ico";
+import Avatar from "../../components/Avatar";
 
 const NAV = [
-  { to: "/admin", icon: LayoutDashboard, label: "Dashboard", end: true },
-  { to: "/admin/users", icon: Users, label: "User Management" },
-  { to: "/admin/appointments", icon: Calendar, label: "Appointments" },
-  { to: "/admin/payments", icon: CreditCard, label: "Payments" },
-  { to: "/admin/specializations", icon: List, label: "Specializations" },
-  { to: "/admin/settings", icon: Settings, label: "System Settings" },
-  { to: "/admin/audit-logs", icon: FileText, label: "Audit Logs" },
+  { to: "/admin", icon: "barChart2", label: "Dashboard", end: true },
+  { to: "/admin/users", icon: "users", label: "Users" },
+  { to: "/admin/doctor-verification", icon: "userCheck", label: "Doctor Verification" },
+  { to: "/admin/appointments", icon: "calendar", label: "Appointments" },
+  { to: "/admin/payments", icon: "creditCard", label: "Payments" },
+  { to: "/admin/specializations", icon: "activity", label: "Specializations" },
+  { to: "/admin/settings", icon: "settings", label: "Settings" },
+  { to: "/admin/audit-logs", icon: "shield", label: "Audit Logs" },
 ];
 
 export default function AdminLayout() {
@@ -18,41 +20,71 @@ export default function AdminLayout() {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen flex bg-app">
-      <aside className="w-64 flex-shrink-0 bg-panel border-r border-line flex flex-col">
-        <div className="p-6 flex items-center gap-3 border-b border-line">
-          <div className="p-2 rounded-xl bg-red-600/20 border border-red-500/30">
-            <Shield className="text-red-500 dark:text-red-400" size={20} />
-          </div>
-          <div>
-            <span className="font-bold text-lg text-fg">HMS</span>
-            <p className="text-xs text-red-500 dark:text-red-400">Admin Portal</p>
+    <div className="app-shell">
+      <aside className="sidebar">
+        <div style={{ padding: "18px 16px 14px", borderBottom: "1px solid var(--border)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: 9,
+                flexShrink: 0,
+                background: "linear-gradient(135deg, var(--amber), #92400e)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                boxShadow: "0 2px 8px rgba(217,119,6,0.25)",
+              }}
+            >
+              <Ico n="shield" size={20} color="#fff" />
+            </div>
+            <div>
+              <div style={{ fontWeight: 800, fontSize: 15, color: "var(--ink)", letterSpacing: "-.02em", lineHeight: 1 }}>HMS</div>
+              <div style={{ fontSize: 10.5, color: "var(--ink-mute)", marginTop: 2, fontWeight: 500 }}>Admin Portal</div>
+            </div>
           </div>
         </div>
-        <nav className="flex-1 p-4 space-y-1">
-          {NAV.map(({ to, icon: Icon, label, end }) => (
-            <NavLink key={to} to={to} end={end}
-              className={({ isActive }) => `nav-item ${isActive ? "active" : ""}`}>
-              <Icon size={18} />{label}
+
+        <nav style={{ flex: 1, padding: "10px 8px", display: "flex", flexDirection: "column", gap: 1 }}>
+          {NAV.map((item) => (
+            <NavLink key={item.to} to={item.to} end={item.end} className={({ isActive }) => `nav-item${isActive ? " active" : ""}`}>
+              <Ico n={item.icon} size={17} />
+              {item.label}
             </NavLink>
           ))}
         </nav>
-        <div className="p-4 border-t border-line">
-          <p className="text-xs text-fg-subtle px-4 mb-2 truncate">{user?.email}</p>
-          <button onClick={() => { logout(); navigate("/admin-login"); }}
-            className="nav-item w-full text-red-500 dark:text-red-400 hover:text-red-600 dark:hover:text-red-300 hover:bg-red-500/10">
-            <LogOut size={18} />Logout
+
+        <div style={{ padding: "10px 8px", borderTop: "1px solid var(--border)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 9, padding: "8px 10px", borderRadius: 9, marginBottom: 6, background: "var(--muted)" }}>
+            <Avatar email={user?.email || ""} size={30} radius={7} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 12.5, fontWeight: 650, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {(user?.email || "admin").split("@")[0]}
+              </div>
+              <div style={{ fontSize: 10.5, color: "var(--ink-mute)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {user?.email || ""}
+              </div>
+            </div>
+          </div>
+          <button className="nav-item nav-item-danger" type="button" onClick={() => { logout(); navigate("/admin-login"); }}>
+            <Ico n="logOut" size={16} /> Sign Out
           </button>
         </div>
       </aside>
-      <div className="flex-1 flex flex-col min-h-screen">
-        <header className="h-16 flex items-center justify-between px-8 border-b border-line bg-panel/70 backdrop-blur-sm sticky top-0 z-10">
-          <span className="text-sm text-fg-muted">Hospital Management System — Admin</span>
-          <ThemeToggle />
-        </header>
-        <main className="flex-1 p-8 overflow-auto">
+
+      <div className="main-area">
+        <div className="topbar">
+          <div style={{ fontSize: 13, color: "var(--ink-mute)", fontWeight: 500 }}>Admin Console</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+            <ThemeToggle />
+            <div style={{ width: 1, height: 18, background: "var(--border)", margin: "0 4px" }} />
+            <Avatar email={user?.email || ""} size={30} radius={8} />
+          </div>
+        </div>
+        <div className="page-content">
           <Outlet />
-        </main>
+        </div>
       </div>
     </div>
   );

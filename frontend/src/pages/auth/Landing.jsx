@@ -1,21 +1,43 @@
 import { useState } from "react";
-import { Activity, Shield, Users, Calendar } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { Navigate } from "react-router-dom";
 import ThemeToggle from "../../components/ThemeToggle";
+import Ico from "../../components/Ico";
 
 const GOOGLE_AUTH_URL = (role) =>
   `${import.meta.env.VITE_API_URL || "http://localhost:8000/api/v1"}/auth/google?role=${role}`;
 
-function FeatureCard({ icon: Icon, title, desc }) {
+function FeatureCard({ icon, color, title, desc }) {
   return (
-    <div className="glass-card p-5 flex gap-4 items-start hover:border-primary-500/30 transition-all duration-300">
-      <div className="p-2.5 rounded-xl bg-primary-600/20 text-primary-600 dark:text-primary-400">
-        <Icon size={20} />
+    <div
+      style={{
+        display: "flex",
+        gap: 12,
+        alignItems: "flex-start",
+        padding: "14px 16px",
+        background: "var(--panel)",
+        borderRadius: 14,
+        border: "1px solid var(--border)",
+        boxShadow: "var(--shadow-sm)",
+      }}
+    >
+      <div
+        style={{
+          width: 36,
+          height: 36,
+          borderRadius: 10,
+          background: `${color}18`,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexShrink: 0,
+        }}
+      >
+        <Ico n={icon} size={17} color={color} />
       </div>
       <div>
-        <p className="font-semibold text-fg text-sm">{title}</p>
-        <p className="text-fg-subtle text-xs mt-0.5 leading-relaxed">{desc}</p>
+        <div style={{ fontWeight: 650, fontSize: 13, marginBottom: 2, color: "var(--ink)" }}>{title}</div>
+        <div style={{ fontSize: 12, color: "var(--ink-mute)", lineHeight: 1.5 }}>{desc}</div>
       </div>
     </div>
   );
@@ -28,85 +50,116 @@ export default function Landing() {
   if (user) return <Navigate to="/" replace />;
 
   return (
-    <div className="min-h-screen bg-hero-gradient flex items-center justify-center p-6 relative overflow-hidden">
-      {/* Decorative blobs */}
-      <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary-500/20 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-0 right-1/4 w-80 h-80 bg-accent-500/15 rounded-full blur-3xl pointer-events-none" />
-
-      {/* Theme toggle — top-right corner */}
-      <div className="absolute top-4 right-4 z-20">
+    <div className="hero-bg" style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: 32, position: "relative" }}>
+      <div style={{ position: "absolute", top: 16, right: 16, zIndex: 20 }}>
         <ThemeToggle />
       </div>
 
-      <div className="relative w-full max-w-5xl grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-        {/* Left — Brand */}
+      <div style={{ position: "relative", width: "100%", maxWidth: 1080, display: "grid", gridTemplateColumns: "1fr 440px", gap: 72, alignItems: "center" }}>
+        {/* Left */}
         <div>
-          <div className="flex items-center gap-3 mb-8">
-            <div className="p-2.5 rounded-xl bg-primary-600/30 border border-primary-500/30">
-              <Activity className="text-primary-600 dark:text-primary-400" size={28} />
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 40 }}>
+            <div style={{ width: 44, height: 44, borderRadius: 11, background: "linear-gradient(135deg, var(--brand-500), var(--brand-700))", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 16px rgba(26,109,181,0.3)" }}>
+              <Ico n="hospital" size={24} color="#fff" />
             </div>
-            <span className="font-bold text-2xl tracking-tight text-gradient">HMS</span>
+            <div>
+              <div style={{ fontWeight: 800, fontSize: 18, letterSpacing: "-.02em", color: "var(--ink)" }}>HMS</div>
+              <div style={{ fontSize: 11, color: "var(--ink-mute)", marginTop: 1 }}>Hospital Management System</div>
+            </div>
           </div>
-          <h1 className="text-4xl lg:text-5xl font-extrabold leading-tight mb-4 text-fg">
-            Modern Healthcare,<br />
-            <span className="text-gradient">Simplified.</span>
+
+          <h1 style={{ fontSize: 44, fontWeight: 850, letterSpacing: "-.04em", lineHeight: 1.1, marginBottom: 18, color: "var(--ink)" }}>
+            Better care,<br />
+            <span style={{ color: "var(--brand-500)" }}>better outcomes.</span>
           </h1>
-          <p className="text-fg-muted text-lg mb-8 leading-relaxed">
-            Streamline appointments, manage medical records, and connect patients with doctors — all in one secure platform.
+          <p style={{ fontSize: 16, color: "var(--ink-soft)", lineHeight: 1.7, marginBottom: 40, maxWidth: 460 }}>
+            A unified platform connecting patients with their doctors. Schedule appointments, access medical records, and manage care — all in one secure place.
           </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <FeatureCard icon={Calendar} title="Smart Booking" desc="Book appointments and get instant slot confirmations" />
-            <FeatureCard icon={Shield} title="Secure & Private" desc="Role-based access with encrypted medical records" />
-            <FeatureCard icon={Users} title="Multi-Role" desc="Separate portals for patients, doctors and admins" />
-            <FeatureCard icon={Activity} title="AI Summaries" desc="AI-powered appointment summaries coming soon" />
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+            <FeatureCard icon="calendar" color="var(--brand-500)" title="Slot-based Scheduling" desc="Real-time availability across all specialties" />
+            <FeatureCard icon="shield" color="var(--mint)" title="Secure Medical Records" desc="Role-based access with full audit logging" />
+            <FeatureCard icon="users" color="var(--violet)" title="Three-role Platform" desc="Patients, doctors, and administrators" />
+            <FeatureCard icon="heartPulse" color="var(--rose)" title="Live Consultations" desc="Doctors manage queue and record diagnoses live" />
           </div>
         </div>
 
-        {/* Right — Auth card */}
-        <div className="glass-card p-8 shadow-glass">
-          <h2 className="text-xl font-bold text-fg mb-1">Get Started</h2>
-          <p className="text-fg-subtle text-sm mb-6">Sign in with your Google account to continue</p>
+        {/* Right: auth card */}
+        <div style={{ background: "var(--panel)", border: "1px solid var(--border)", borderRadius: 20, padding: 34, boxShadow: "var(--shadow-lg)" }}>
+          <div style={{ marginBottom: 24 }}>
+            <div style={{ fontSize: 20, fontWeight: 750, marginBottom: 5, color: "var(--ink)" }}>Sign in to HMS</div>
+            <div style={{ fontSize: 13, color: "var(--ink-mute)", lineHeight: 1.5 }}>Select your role and sign in with your Google account.</div>
+          </div>
 
-          {/* Role tabs */}
-          <div className="flex rounded-xl bg-subtle p-1 mb-6">
+          <div style={{ display: "flex", background: "var(--muted)", borderRadius: 10, padding: 3, marginBottom: 24 }}>
             {["patient", "doctor"].map((r) => (
               <button
                 key={r}
+                type="button"
                 onClick={() => setActiveTab(r)}
-                className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all duration-200 capitalize ${
-                  activeTab === r
-                    ? "bg-primary-600 text-white shadow-glow"
-                    : "text-fg-subtle hover:text-fg"
-                }`}
+                style={{
+                  flex: 1,
+                  padding: "8px 12px",
+                  borderRadius: 8,
+                  fontSize: 13,
+                  fontWeight: 650,
+                  border: "none",
+                  cursor: "pointer",
+                  transition: "all 140ms",
+                  background: activeTab === r ? "var(--panel)" : "transparent",
+                  color: activeTab === r ? "var(--ink)" : "var(--ink-mute)",
+                  boxShadow: activeTab === r ? "var(--shadow-xs)" : "none",
+                }}
               >
-                {r === "patient" ? "🧑‍⚕️ Patient" : "👨‍⚕️ Doctor"}
+                {r === "patient" ? "Patient" : "Doctor"}
               </button>
             ))}
           </div>
 
+          <div style={{ background: "var(--muted)", borderRadius: 10, padding: "10px 14px", marginBottom: 22, fontSize: 12.5, color: "var(--ink-soft)", lineHeight: 1.5 }}>
+            {activeTab === "patient"
+              ? "Book appointments, view medical history, and manage your health records."
+              : "Manage your schedule, run live consultation sessions, and record diagnoses."}
+          </div>
+
           <a
             href={GOOGLE_AUTH_URL(activeTab)}
-            className="flex items-center justify-center gap-3 w-full py-3.5 rounded-xl border border-line bg-subtle hover:bg-line transition-all duration-200 text-fg font-medium text-sm group"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 10,
+              width: "100%",
+              padding: "11px 16px",
+              borderRadius: 10,
+              border: "1px solid var(--border)",
+              background: "var(--muted)",
+              fontSize: 13.5,
+              fontWeight: 500,
+              cursor: "pointer",
+              transition: "all 140ms",
+              marginBottom: 14,
+              color: "var(--ink)",
+            }}
           >
-            <svg viewBox="0 0 24 24" className="w-5 h-5">
+            <svg viewBox="0 0 24 24" width={18} height={18} aria-hidden="true">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
               <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
               <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
               <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
             </svg>
-            Continue with Google as {activeTab === "patient" ? "Patient" : "Doctor"}
+            Continue as {activeTab === "patient" ? "Patient" : "Doctor"} with Google
           </a>
 
-          <p className="text-center text-fg-subtle text-xs mt-5">
-            By signing in you agree to our{" "}
-            <span className="text-primary-600 dark:text-primary-400 cursor-pointer hover:underline">Terms of Service</span>
-            {" "}and{" "}
-            <span className="text-primary-600 dark:text-primary-400 cursor-pointer hover:underline">Privacy Policy</span>
+          <p style={{ textAlign: "center", fontSize: 11.5, color: "var(--ink-mute)", marginBottom: 20, lineHeight: 1.6 }}>
+            By signing in you agree to our <span style={{ color: "var(--brand-500)" }}>Terms of Service</span> and <span style={{ color: "var(--brand-500)" }}>Privacy Policy</span>
           </p>
 
-          <div className="border-t border-line mt-5 pt-4 text-center">
-            <span className="text-fg-subtle text-xs">Healthcare admin? </span>
-            <a href="/admin-login" className="text-primary-600 dark:text-primary-400 text-xs hover:underline">Admin login →</a>
+          <div style={{ borderTop: "1px solid var(--border)", paddingTop: 16, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+            <span style={{ fontSize: 12, color: "var(--ink-mute)" }}>Healthcare administrator?</span>
+            <a href="/admin-login" style={{ fontSize: 12, color: "var(--brand-500)", fontWeight: 650 }}>
+              Admin portal →
+            </a>
           </div>
         </div>
       </div>

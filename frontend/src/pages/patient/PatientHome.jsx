@@ -1,100 +1,112 @@
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Calendar, FileText, Clock, CheckCircle, TrendingUp, Bell } from "lucide-react";
 import { appointmentApi } from "../../api";
 import { useAuth } from "../../context/AuthContext";
-import { format } from "date-fns";
+import StatCard from "../../components/StatCard";
+import EmptyState from "../../components/EmptyState";
+import Ico from "../../components/Ico";
+import StatusBadge from "../../components/StatusBadge";
 
-function StatCard({ label, value, icon: Icon, color }) {
-  return (
-    <div className="glass-card p-5 flex items-center gap-4">
-      <div className={`p-3 rounded-xl ${color}`}><Icon size={20} className="text-white" /></div>
-      <div>
-        <p className="text-2xl font-bold text-fg">{value ?? "—"}</p>
-        <p className="text-fg-subtle text-sm">{label}</p>
-      </div>
-    </div>
-  );
-}
-
-function AppointmentCard({ appt }) {
-  return (
-    <div className="glass-card p-4 flex items-center gap-4 hover:border-primary-500/30 transition-all duration-200">
-      <div className="p-2.5 rounded-xl bg-primary-600/20 text-primary-400"><Calendar size={18} /></div>
-      <div className="flex-1 min-w-0">
-        <p className="font-semibold text-fg text-sm truncate">Appointment #{appt.slot_number}</p>
-        <p className="text-fg-subtle text-xs">{appt.booked_at ? format(new Date(appt.booked_at), "MMM d, yyyy") : "—"}</p>
-      </div>
-      <span className={`badge ${appt.status === "confirmed" ? "badge-success" : "badge-info"}`}>{appt.status}</span>
-    </div>
-  );
+function fmtDate(s) {
+  if (!s) return "—";
+  try {
+    return new Date(s).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+  } catch {
+    return s;
+  }
 }
 
 export default function PatientHome() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { data: upcoming = [] } = useQuery({ queryKey: ["upcoming-appts"], queryFn: () => appointmentApi.upcoming().then(r => r.data) });
-  const { data: history = [] } = useQuery({ queryKey: ["appt-history"], queryFn: () => appointmentApi.history().then(r => r.data) });
+  const { data: upcoming = [] } = useQuery({ queryKey: ["upcoming-appts"], queryFn: () => appointmentApi.upcoming().then((r) => r.data) });
+  const { data: history = [] } = useQuery({ queryKey: ["appt-history"], queryFn: () => appointmentApi.history().then((r) => r.data) });
+  const next = upcoming[0];
 
   return (
-    <div className="space-y-8">
-      {/* Welcome */}
+    <div className="page-enter" style={{ display: "flex", flexDirection: "column", gap: 22 }}>
       <div>
-        <h1 className="text-3xl font-bold text-fg mb-1">Welcome back 👋</h1>
-        <p className="text-fg-subtle">{user?.email}</p>
+        <div className="eyebrow" style={{ marginBottom: 6 }}>Patient Portal</div>
+        <h1 style={{ fontSize: 26, fontWeight: 850, letterSpacing: "-.02em" }}>Welcome back</h1>
+        <p style={{ fontSize: 13, color: "var(--ink-mute)", marginTop: 4 }}>{user?.email}</p>
       </div>
 
-      {/* Primary CTAs */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <button onClick={() => navigate("/patient/appointments")}
-          className="glass-card p-6 flex flex-col items-start gap-3 hover:border-primary-500/40 hover:bg-primary-600/5 transition-all duration-300 group text-left">
-          <div className="p-3 rounded-xl bg-primary-600/30 group-hover:bg-primary-600/50 transition-colors">
-            <Calendar size={24} className="text-primary-400" />
-          </div>
-          <div>
-            <p className="font-bold text-fg text-lg">Book an Appointment</p>
-            <p className="text-fg-subtle text-sm">Find doctors and schedule your visit</p>
-          </div>
-          <span className="btn-primary text-xs px-3 py-1.5">Browse Doctors →</span>
-        </button>
-
-        <button onClick={() => navigate("/patient/history")}
-          className="glass-card p-6 flex flex-col items-start gap-3 hover:border-accent-500/40 hover:bg-accent-500/5 transition-all duration-300 group text-left">
-          <div className="p-3 rounded-xl bg-accent-500/20 group-hover:bg-accent-500/30 transition-colors">
-            <FileText size={24} className="text-accent-400" />
-          </div>
-          <div>
-            <p className="font-bold text-fg text-lg">Medical History</p>
-            <p className="text-fg-subtle text-sm">View past appointments and diagnoses</p>
-          </div>
-          <span className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-accent-500/20 text-accent-400 font-semibold">View Records →</span>
-        </button>
+      <div className="grid-4">
+        <StatCard icon="calendar" iconClass="icon-blue" label="Upcoming Appointments" value={upcoming.length} />
+        <StatCard icon="checkCircle" iconClass="icon-mint" label="Past Consultations" value={history.length} />
+        <StatCard icon="creditCard" iconClass="icon-violet" label="Payments" value="—" sub="Mock payments supported" />
+        <StatCard icon="activity" iconClass="icon-amber" label="Profile" value={user?.profile_complete ? "Complete" : "Incomplete"} />
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Total Visits" value={history.length} icon={CheckCircle} color="bg-accent-500" />
-        <StatCard label="Upcoming" value={upcoming.length} icon={Clock} color="bg-primary-600" />
-        <StatCard label="This Year" value={history.filter(a => new Date(a.booked_at).getFullYear() === new Date().getFullYear()).length} icon={TrendingUp} color="bg-amber-500" />
-        <StatCard label="Notifications" value={0} icon={Bell} color="bg-violet-600" />
-      </div>
-
-      {/* Upcoming appointments */}
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-fg">Upcoming Appointments</h2>
-          <button onClick={() => navigate("/patient/appointments")} className="text-primary-600 dark:text-primary-400 text-sm hover:underline">Book new →</button>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 340px", gap: 20 }}>
+        <div className="card card-p">
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+            <div style={{ fontWeight: 700 }}>Next Appointment</div>
+            <button className="btn btn-secondary btn-sm" type="button" onClick={() => navigate("/patient/appointments")}>
+              View all
+            </button>
+          </div>
+          {next ? (
+            <div style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
+              <div style={{ width: 60, height: 60, borderRadius: 14, flexShrink: 0, background: "rgba(26,127,230,.08)", border: "1px solid rgba(26,127,230,.15)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+                <div style={{ fontSize: 11, fontWeight: 650, color: "var(--brand-500)" }}>{fmtDate(next.booked_at).split(" ")[1] || ""}</div>
+                <div style={{ fontSize: 22, fontWeight: 900, color: "var(--ink)", lineHeight: 1.1 }}>{fmtDate(next.booked_at).split(" ")[0] || ""}</div>
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 750, fontSize: 16 }}>Slot #{next.slot_number}</div>
+                <div style={{ fontSize: 12.5, color: "var(--ink-mute)" }}>{fmtDate(next.booked_at)}</div>
+                <div style={{ marginTop: 10, display: "flex", gap: 8, alignItems: "center" }}>
+                  <StatusBadge status={next.status} />
+                </div>
+                {next.symptoms_text ? (
+                  <div style={{ marginTop: 10, background: "rgba(217,119,6,.07)", border: "1px solid rgba(217,119,6,.18)", borderRadius: 11, padding: "10px 14px", display: "flex", gap: 10, alignItems: "flex-start" }}>
+                    <Ico n="alertCircle" size={14} color="var(--amber)" style={{ flexShrink: 0, marginTop: 2 }} />
+                    <div style={{ fontSize: 12.5, color: "var(--ink-soft)" }}>
+                      <strong style={{ color: "var(--amber)" }}>Symptoms: </strong>{next.symptoms_text}
+                    </div>
+                  </div>
+                ) : null}
+                <div style={{ marginTop: 12, display: "flex", gap: 8 }}>
+                  <button className="btn btn-secondary btn-sm" type="button" onClick={() => navigate("/patient/appointments")}>
+                    <Ico n="eye" size={13} /> View details
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <EmptyState icon="calendar" title="No upcoming appointments" desc="Book a consultation with a doctor." action="Find Doctors" onAction={() => navigate("/patient/doctors")} />
+          )}
         </div>
-        {upcoming.length === 0 ? (
-          <div className="glass-card p-10 text-center text-fg-subtle">
-            <Calendar size={32} className="mx-auto mb-2 opacity-30" />
-            <p className="text-sm">No upcoming appointments</p>
+
+        <div className="card card-p">
+          <div style={{ fontWeight: 700, marginBottom: 14 }}>Quick Actions</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            {[
+              { icon: "search", color: "var(--brand-500)", label: "Find a Doctor", sub: "Browse verified specialists", to: "/patient/doctors" },
+              { icon: "fileText", color: "var(--mint)", label: "Medical History", sub: "View past consultations", to: "/patient/history" },
+              { icon: "creditCard", color: "var(--violet)", label: "Payments", sub: "Billing history and receipts", to: "/patient/payments" },
+              { icon: "user", color: "var(--amber)", label: "My Profile", sub: "Personal and medical information", to: "/patient/profile" },
+            ].map((a) => (
+              <button
+                key={a.to}
+                type="button"
+                onClick={() => navigate(a.to)}
+                style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", padding: "10px 12px", borderRadius: 12, border: "none", background: "transparent", cursor: "pointer", textAlign: "left", transition: "background 120ms" }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = "var(--muted)")}
+                onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+              >
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: `${a.color}14`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <Ico n={a.icon} size={16} color={a.color} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 13.5, fontWeight: 600 }}>{a.label}</div>
+                  <div style={{ fontSize: 11.5, color: "var(--ink-mute)" }}>{a.sub}</div>
+                </div>
+                <Ico n="chevronRight" size={14} color="var(--ink-dim)" />
+              </button>
+            ))}
           </div>
-        ) : (
-          <div className="space-y-3">
-            {upcoming.map(a => <AppointmentCard key={a.id} appt={a} />)}
-          </div>
-        )}
+        </div>
       </div>
     </div>
   );

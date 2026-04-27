@@ -14,22 +14,27 @@ import AdminLogin from "./pages/auth/AdminLogin";
 import PatientLayout from "./pages/patient/PatientLayout";
 import PatientHome from "./pages/patient/PatientHome";
 import PatientProfile from "./pages/patient/PatientProfile";
-import DoctorList from "./pages/patient/DoctorList";
-import DoctorProfile from "./pages/patient/DoctorProfile";
+import FindDoctors from "./pages/patient/FindDoctors";
+import DoctorDetail from "./pages/patient/DoctorDetail";
+import BookAppointment from "./pages/patient/BookAppointment";
+import MyAppointments from "./pages/patient/MyAppointments";
 import MedicalHistory from "./pages/patient/MedicalHistory";
+import Payments from "./pages/patient/Payments";
+import PaymentMethods from "./pages/patient/PaymentMethods";
+import NotificationSettings from "./pages/patient/NotificationSettings";
 
 // Doctor
 import DoctorLayout from "./pages/doctor/DoctorLayout";
 import DoctorHome from "./pages/doctor/DoctorHome";
 import DoctorProfilePage from "./pages/doctor/DoctorProfilePage";
-import PatientViewer from "./pages/doctor/PatientViewer";
-import SessionHistory from "./pages/doctor/SessionHistory";
+import TodaySessions from "./pages/doctor/TodaySessions";
 import CurrentSession from "./pages/doctor/CurrentSession";
 
 // Admin
 import AdminLayout from "./pages/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminUsers from "./pages/admin/AdminUsers";
+import AdminDoctorVerification from "./pages/admin/AdminDoctorVerification";
 import AdminAppointments from "./pages/admin/AdminAppointments";
 import AdminPayments from "./pages/admin/AdminPayments";
 import AdminSpecializations from "./pages/admin/AdminSpecializations";
@@ -84,17 +89,21 @@ export default function App() {
             <Route path="/patient" element={<ProtectedRoute allowedRoles={["patient"]}><PatientLayout /></ProtectedRoute>}>
               <Route index element={<PatientHome />} />
               <Route path="profile" element={<PatientProfile />} />
-              <Route path="appointments" element={<DoctorList />} />
-              <Route path="appointments/doctor/:id" element={<DoctorProfile />} />
+              <Route path="doctors" element={<FindDoctors />} />
+              <Route path="doctors/:id" element={<DoctorDetail />} />
+              <Route path="book/:sessionId" element={<BookAppointment />} />
+              <Route path="appointments" element={<MyAppointments />} />
               <Route path="history" element={<MedicalHistory />} />
+              <Route path="payments" element={<Payments />} />
+              <Route path="payment-methods" element={<PaymentMethods />} />
+              <Route path="notifications" element={<NotificationSettings />} />
             </Route>
 
             {/* Doctor */}
             <Route path="/doctor" element={<ProtectedRoute allowedRoles={["doctor"]}><DoctorLayout /></ProtectedRoute>}>
               <Route index element={<DoctorHome />} />
               <Route path="profile" element={<DoctorProfilePage />} />
-              <Route path="patients" element={<PatientViewer />} />
-              <Route path="sessions" element={<SessionHistory />} />
+              <Route path="today" element={<TodaySessions />} />
               <Route path="session/:id" element={<CurrentSession />} />
             </Route>
 
@@ -102,6 +111,7 @@ export default function App() {
             <Route path="/admin" element={<ProtectedRoute allowedRoles={["admin"]}><AdminLayout /></ProtectedRoute>}>
               <Route index element={<AdminDashboard />} />
               <Route path="users" element={<AdminUsers />} />
+              <Route path="doctor-verification" element={<AdminDoctorVerification />} />
               <Route path="appointments" element={<AdminAppointments />} />
               <Route path="payments" element={<AdminPayments />} />
               <Route path="specializations" element={<AdminSpecializations />} />
