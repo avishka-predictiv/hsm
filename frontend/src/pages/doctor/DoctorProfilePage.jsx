@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { doctorApi, specializationApi } from "../../api";
-import { Save, Plus, Trash2, User } from "lucide-react";
+import { Save, Plus, Trash2, User, Pencil } from "lucide-react";
 import toast from "react-hot-toast";
 
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -13,6 +13,7 @@ export default function DoctorProfilePage() {
   const [specSearch, setSpecSearch] = useState("");
   const [addingSchedule, setAddingSchedule] = useState(false);
   const [schedForm, setSchedForm] = useState({ day_of_week: "Mon", start_time: "09:00:00", end_time: "17:00:00", slot_duration_mins: 15, max_patients: 20 });
+  const [editingSchedule, setEditingSchedule] = useState(null);
 
   const { data: profile } = useQuery({ queryKey: ["doctor-profile"], queryFn: () => doctorApi.myProfile().then(r => r.data) });
   const { data: specs = [] } = useQuery({ queryKey: ["specializations"], queryFn: () => specializationApi.list().then(r => r.data) });
@@ -26,6 +27,18 @@ export default function DoctorProfilePage() {
   const { mutate: addSchedule } = useMutation({
     mutationFn: (d) => doctorApi.createSchedule(d),
     onSuccess: () => { toast.success("Schedule added!"); qc.invalidateQueries(["doctor-schedules"]); setAddingSchedule(false); },
+  });
+
+  const { mutate: updateSchedule } = useMutation({
+    mutationFn: ({ id, data }) => doctorApi.updateSchedule(id, data),
+    onSuccess: () => { toast.success("Schedule updated!"); qc.invalidateQueries(["doctor-schedules"]); setAddingSchedule(false); setEditingSchedule(null); },
+    onError: (e) => toast.error(e?.response?.data?.detail || "Failed to update schedule"),
+  });
+
+  const { mutate: deleteSchedule } = useMutation({
+    mutationFn: (id) => doctorApi.deleteSchedule(id),
+    onSuccess: () => { toast.success("Schedule deleted"); qc.invalidateQueries(["doctor-schedules"]); },
+    onError: (e) => toast.error(e?.response?.data?.detail || "Failed to delete schedule"),
   });
 
   const p = editing ? form : profile;
@@ -111,7 +124,35 @@ export default function DoctorProfilePage() {
               <p className="text-sm font-medium text-fg">{s.day_of_week} · {s.start_time} — {s.end_time}</p>
               <p className="text-xs text-fg-subtle">{s.slot_duration_mins}min slots · max {s.max_patients} patients</p>
             </div>
-            <span className={`badge ${s.is_active ? "badge-success" : "badge-neutral"}`}>{s.is_active ? "Active" : "Inactive"}</span>
+            <div className="flex items-center gap-2">
+              <span className={`badge ${s.is_active ? "badge-success" : "badge-neutral"}`}>{s.is_active ? "Active" : "Inactive"}</span>
+              <button
+                type="button"
+                className="btn-secondary text-xs px-2 py-1"
+                onClick={() => {
+                  setAddingSchedule(true);
+                  setEditingSchedule(s);
+                  setSchedForm({
+                    day_of_week: s.day_of_week,
+                    start_time: s.start_time,
+                    end_time: s.end_time,
+                    slot_duration_mins: s.slot_duration_mins,
+                    max_patients: s.max_patients,
+                  });
+                }}
+                title="Edit"
+              >
+                <Pencil size={14} />
+              </button>
+              <button
+                type="button"
+                className="btn-secondary text-xs px-2 py-1"
+                onClick={() => deleteSchedule(s.id)}
+                title="Delete"
+              >
+                <Trash2 size={14} />
+              </button>
+            </div>
           </div>
         ))}
         {addingSchedule && (
@@ -137,8 +178,21 @@ export default function DoctorProfilePage() {
               </div>
             </div>
             <div className="flex gap-2">
-              <button onClick={() => addSchedule(schedForm)} className="btn-primary">Add</button>
-              <button onClick={() => setAddingSchedule(false)} className="btn-secondary">Cancel</button>
+              <button
+                onClick={() => {
+                  if (editingSchedule) updateSchedule({ id: editingSchedule.id, data: schedForm });
+                  else addSchedule(schedForm);
+                }}
+                className="btn-primary"
+              >
+                {editingSchedule ? "Save" : "Add"}
+              </button>
+              <button
+                onClick={() => { setAddingSchedule(false); setEditingSchedule(null); }}
+                className="btn-secondary"
+              >
+                Cancel
+              </button>
             </div>
           </div>
         )}

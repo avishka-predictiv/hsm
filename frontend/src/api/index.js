@@ -56,6 +56,8 @@ export const doctorApi = {
   updateProfile: (data) => api.put("/doctors/profile/me", data),
   mySchedules: () => api.get("/doctors/schedules/me"),
   createSchedule: (data) => api.post("/doctors/schedules/me", data),
+  updateSchedule: (id, data) => api.put(`/doctors/schedules/me/${id}`, data),
+  deleteSchedule: (id) => api.delete(`/doctors/schedules/me/${id}`),
 };
 
 export const patientApi = {
