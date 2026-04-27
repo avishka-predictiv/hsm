@@ -1,0 +1,158 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Theme tokens.
+ * Values are space-separated RGB triplets so Tailwind can apply alpha with the
+ * `<alpha-value>` slot (e.g., `bg-panel/50`). Override in `.dark` below.
+ */
+:root {
+  --color-app:          248 250 252;   /* slate-50   — page background       */
+  --color-panel:        255 255 255;   /* white      — card / sidebar        */
+  --color-elevated:     255 255 255;   /* white      — modals / popovers     */
+  --color-subtle:       241 245 249;   /* slate-100  — inputs / nested bg    */
+  --color-line:         226 232 240;   /* slate-200  — subtle borders        */
+  --color-line-strong:  203 213 225;   /* slate-300  — stronger borders      */
+  --color-fg:            15  23  42;   /* slate-900  — primary text          */
+  --color-fg-muted:      51  65  85;   /* slate-700  — secondary text        */
+  --color-fg-subtle:    100 116 139;   /* slate-500  — tertiary text         */
+  --color-fg-dim:       148 163 184;   /* slate-400  — disabled / placeholder*/
+
+  --hero-gradient: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 50%, #f8fafc 100%);
+  --glass-stroke: rgba(15, 23, 42, 0.08);
+  --glass-fill:   rgba(255, 255, 255, 0.7);
+  --shadow-card:  0 4px 24px rgba(15, 23, 42, 0.06);
+}
+
+.dark {
+  --color-app:            2   6  23;   /* surface-950 */
+  --color-panel:         15  23  42;   /* surface-900 */
+  --color-elevated:      30  41  59;   /* surface-800 */
+  --color-subtle:        30  41  59;   /* surface-800 */
+  --color-line:          30  41  59;   /* surface-800 */
+  --color-line-strong:   51  65  85;   /* slate-700   */
+  --color-fg:           241 245 249;   /* slate-100   */
+  --color-fg-muted:     203 213 225;   /* slate-300   */
+  --color-fg-subtle:    148 163 184;   /* slate-400   */
+  --color-fg-dim:       100 116 139;   /* slate-500   */
+
+  --hero-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+  --glass-stroke: rgba(255, 255, 255, 0.10);
+  --glass-fill:   rgba(255, 255, 255, 0.05);
+  --shadow-card:  0 4px 24px rgba(0, 0, 0, 0.35);
+}
+
+@layer base {
+  * { box-sizing: border-box; }
+  html { font-family: 'Inter', system-ui, sans-serif; }
+  body {
+    @apply bg-app text-fg antialiased;
+    min-height: 100vh;
+    transition: background-color 200ms ease, color 200ms ease;
+  }
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { @apply bg-subtle; }
+  ::-webkit-scrollbar-thumb { @apply bg-primary-600 rounded-full; }
+}
+
+@layer components {
+  /* Glass card — adapts to theme via CSS variables */
+  .glass-card {
+    background-color: var(--glass-fill);
+    border: 1px solid var(--glass-stroke);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: var(--shadow-card);
+    @apply rounded-2xl;
+  }
+
+  /* Primary button */
+  .btn-primary {
+    @apply inline-flex items-center gap-2 px-5 py-2.5 rounded-xl
+           bg-primary-600 hover:bg-primary-500 active:bg-primary-700
+           text-white font-semibold text-sm
+           transition-all duration-200 shadow-glow hover:shadow-glow
+           focus:outline-none focus:ring-2 focus:ring-primary-400
+           focus:ring-offset-2 focus:ring-offset-app;
+  }
+
+  /* Secondary button */
+  .btn-secondary {
+    @apply inline-flex items-center gap-2 px-5 py-2.5 rounded-xl
+           bg-subtle hover:bg-line border border-line
+           text-fg font-medium text-sm
+           transition-all duration-200
+           focus:outline-none focus:ring-2 focus:ring-primary-400
+           focus:ring-offset-2 focus:ring-offset-app;
+  }
+
+  /* Danger button */
+  .btn-danger {
+    @apply inline-flex items-center gap-2 px-5 py-2.5 rounded-xl
+           bg-red-600 hover:bg-red-500 text-white font-semibold text-sm
+           transition-all duration-200;
+  }
+
+  /* Ghost / icon button */
+  .btn-ghost {
+    @apply inline-flex items-center justify-center p-2 rounded-xl
+           text-fg-subtle hover:text-fg hover:bg-subtle
+           transition-all duration-200;
+  }
+
+  /* Input field */
+  .input-field {
+    @apply w-full px-4 py-3 rounded-xl
+           bg-subtle border border-line
+           text-fg placeholder-fg-dim
+           focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500
+           transition-all duration-200 text-sm;
+  }
+
+  /* Label */
+  .input-label {
+    @apply block text-sm font-medium text-fg-muted mb-1.5;
+  }
+
+  /* Badge */
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold;
+  }
+  .badge-success { @apply badge bg-accent-500/20 text-accent-600 dark:text-accent-400; }
+  .badge-warning { @apply badge bg-amber-500/20 text-amber-700 dark:text-amber-400; }
+  .badge-danger  { @apply badge bg-red-500/20 text-red-700 dark:text-red-400; }
+  .badge-info    { @apply badge bg-primary-500/20 text-primary-700 dark:text-primary-300; }
+  .badge-neutral { @apply badge bg-line text-fg-muted; }
+
+  /* Sidebar nav item */
+  .nav-item {
+    @apply flex items-center gap-3 px-4 py-2.5 rounded-xl
+           text-fg-subtle hover:text-fg hover:bg-subtle
+           transition-all duration-200 text-sm font-medium cursor-pointer;
+  }
+  .nav-item.active {
+    @apply text-white bg-primary-600 border border-primary-500;
+  }
+  .dark .nav-item.active {
+    @apply text-white bg-primary-600/30 border-primary-500/30;
+  }
+}
+
+@layer utilities {
+  .text-gradient {
+    @apply bg-gradient-to-r from-primary-500 to-accent-500 bg-clip-text text-transparent;
+  }
+  .dark .text-gradient {
+    @apply from-primary-400 to-accent-400;
+  }
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+}
