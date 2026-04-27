@@ -99,6 +99,8 @@ async def upcoming_appointments(
 ):
     pat_res = await db.execute(select(Patient).where(Patient.user_id == current_user.id))
     patient = pat_res.scalar_one_or_none()
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient profile not found")
 
     from datetime import date
     result = await db.execute(
@@ -121,6 +123,8 @@ async def appointment_history(
 ):
     pat_res = await db.execute(select(Patient).where(Patient.user_id == current_user.id))
     patient = pat_res.scalar_one_or_none()
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient profile not found")
 
     result = await db.execute(
         select(Appointment)
@@ -151,6 +155,8 @@ async def cancel_appointment(
     if current_user.role == "patient":
         pat_res = await db.execute(select(Patient).where(Patient.user_id == current_user.id))
         patient = pat_res.scalar_one_or_none()
+        if not patient:
+            raise HTTPException(status_code=404, detail="Patient profile not found")
         if appt.patient_id != patient.id:
             raise HTTPException(status_code=403, detail="Not your appointment")
     elif current_user.role == "doctor":

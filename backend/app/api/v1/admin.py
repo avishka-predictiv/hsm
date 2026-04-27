@@ -75,12 +75,17 @@ async def verify_doctor(
     current_user: User = Depends(_admin_required()),
     db: AsyncSession = Depends(get_db),
 ):
+    # Accept either Doctor.id or Doctor.user_id for convenience, since some
+    # admin UIs only have access to the User.id.
     result = await db.execute(select(Doctor).where(Doctor.id == doctor_id))
     doctor = result.scalar_one_or_none()
     if not doctor:
+        result2 = await db.execute(select(Doctor).where(Doctor.user_id == doctor_id))
+        doctor = result2.scalar_one_or_none()
+    if not doctor:
         raise HTTPException(status_code=404, detail="Doctor not found")
     doctor.is_verified = True
-    return {"message": "Doctor verified", "doctor_id": doctor_id}
+    return {"message": "Doctor verified", "doctor_id": doctor.id}
 
 
 @router.get("/appointments")

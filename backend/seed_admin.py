@@ -32,7 +32,19 @@ async def seed():
         )
         existing = result.scalar_one_or_none()
         if existing:
-            print(f"Admin already exists: {settings.ADMIN_EMAIL}")
+            # Ensure the admin can actually log in
+            changed = False
+            if not existing.is_active:
+                existing.is_active = True
+                changed = True
+            if not existing.profile_complete:
+                existing.profile_complete = True
+                changed = True
+            if changed:
+                await session.commit()
+                print(f"Admin re-activated: {settings.ADMIN_EMAIL}")
+            else:
+                print(f"Admin already exists: {settings.ADMIN_EMAIL}")
             return
 
         admin_id = str(uuid.uuid4())

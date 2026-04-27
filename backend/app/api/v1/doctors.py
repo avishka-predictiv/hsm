@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
+from sqlalchemy.orm import selectinload
 from typing import List, Optional
 
 from app.core.database import get_db
@@ -24,6 +25,7 @@ async def list_doctors(
     """Public: list all verified doctors with optional search."""
     query = (
         select(Doctor)
+        .options(selectinload(Doctor.specializations))
         .join(Doctor.user)
         .where(Doctor.is_verified == True)  # noqa
     )
@@ -48,7 +50,11 @@ async def list_doctors(
 
 @router.get("/{doctor_id}", response_model=DoctorOut)
 async def get_doctor(doctor_id: str, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Doctor).where(Doctor.id == doctor_id))
+    result = await db.execute(
+        select(Doctor)
+        .options(selectinload(Doctor.specializations))
+        .where(Doctor.id == doctor_id)
+    )
     doctor = result.scalar_one_or_none()
     if not doctor:
         from fastapi import HTTPException
@@ -90,7 +96,11 @@ async def get_my_profile(
     current_user: User = Depends(require_role("doctor")),
     db: AsyncSession = Depends(get_db),
 ):
-    result = await db.execute(select(Doctor).where(Doctor.user_id == current_user.id))
+    result = await db.execute(
+        select(Doctor)
+        .options(selectinload(Doctor.specializations))
+        .where(Doctor.user_id == current_user.id)
+    )
     doctor = result.scalar_one_or_none()
     if not doctor:
         from fastapi import HTTPException
@@ -106,7 +116,11 @@ async def update_my_profile(
     current_user: User = Depends(require_role("doctor")),
     db: AsyncSession = Depends(get_db),
 ):
-    result = await db.execute(select(Doctor).where(Doctor.user_id == current_user.id))
+    result = await db.execute(
+        select(Doctor)
+        .options(selectinload(Doctor.specializations))
+        .where(Doctor.user_id == current_user.id)
+    )
     doctor = result.scalar_one_or_none()
     if not doctor:
         from fastapi import HTTPException
@@ -132,6 +146,9 @@ async def get_my_schedules(
 ):
     result = await db.execute(select(Doctor).where(Doctor.user_id == current_user.id))
     doctor = result.scalar_one_or_none()
+    if not doctor:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Profile not found")
     schedule_res = await db.execute(select(DoctorSchedule).where(DoctorSchedule.doctor_id == doctor.id))
     return schedule_res.scalars().all()
 
@@ -144,6 +161,9 @@ async def create_schedule(
 ):
     result = await db.execute(select(Doctor).where(Doctor.user_id == current_user.id))
     doctor = result.scalar_one_or_none()
+    if not doctor:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Profile not found")
     schedule = DoctorSchedule(doctor_id=doctor.id, **data.model_dump())
     db.add(schedule)
     await db.flush()

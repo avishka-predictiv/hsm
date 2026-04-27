@@ -40,3 +40,15 @@ class RefreshRequest(BaseModel):
 class AdminLoginRequest(BaseModel):
     email: str
     password: str
+
+
+class UserRegisterRequest(BaseModel):
+    email: EmailStr
+    password: str
+    role: UserRole
+
+
+class UserLoginRequest(BaseModel):
+    email: EmailStr
+    password: str
+    role: UserRole
