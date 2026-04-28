@@ -63,9 +63,8 @@ async def book_appointment(
     if existing.scalar_one_or_none():
         raise HTTPException(status_code=409, detail="Already booked for this session")
 
-    # Count current bookings to assign next slot
-    count_res = await db.execute(
-        select(func.count(Appointment.id)).where(
+    booked_res = await db.execute(
+        select(Appointment.slot_number).where(
             Appointment.session_id == data.session_id,
             Appointment.status.not_in([
                 AppointmentStatus.patient_withdrawn,
@@ -73,11 +72,18 @@ async def book_appointment(
             ]),
         )
     )
-    current_count = count_res.scalar() or 0
-    if current_count >= session.max_patients:
-        raise HTTPException(status_code=409, detail="Session is fully booked")
+    booked_slots = {row[0] for row in booked_res.fetchall()}
 
-    slot_number = current_count + 1
+    if data.selected_slot_number is not None:
+        if data.selected_slot_number < 1 or data.selected_slot_number > session.max_patients:
+            raise HTTPException(status_code=400, detail="Selected slot number is invalid")
+        if data.selected_slot_number in booked_slots:
+            raise HTTPException(status_code=409, detail="Selected slot is already booked")
+        slot_number = data.selected_slot_number
+    else:
+        slot_number = next((i for i in range(1, session.max_patients + 1) if i not in booked_slots), None)
+        if slot_number is None:
+            raise HTTPException(status_code=409, detail="Session is fully booked")
 
     appointment = Appointment(
         id=str(uuid.uuid4()),
@@ -92,23 +98,15 @@ async def book_appointment(
     db.add(appointment)
     await db.flush()
 
-    # Get doctor email for the notification message
-    dr_email_res = await db.execute(
-        select(User.email).join(Doctor, Doctor.user_id == User.id).where(Doctor.id == session.doctor_id)
+    result = await db.execute(
+        select(Appointment)
+        .options(
+            selectinload(Appointment.diagnosis),
+            selectinload(Appointment.session),
+        )
+        .where(Appointment.id == appointment.id)
     )
-    doctor_email = dr_email_res.scalar_one_or_none() or "doctor"
-
-    await notif_svc.notify_appointment_booked(
-        db=db,
-        user_id=current_user.id,
-        user_email=current_user.email,
-        patient_mobile=patient.mobile,
-        appointment_id=appointment.id,
-        doctor_email=doctor_email,
-        session_date=str(session.date),
-        session_time=session.start_time,
-        slot_number=slot_number,
-    )
+    appointment = result.scalar_one()
     return appointment
     # Re-load with relationships to avoid async lazy-load during response serialization
     loaded = await db.execute(
@@ -132,7 +130,10 @@ async def upcoming_appointments(
     from datetime import date
     result = await db.execute(
         select(Appointment)
-        .options(selectinload(Appointment.diagnosis))
+        .options(
+            selectinload(Appointment.diagnosis),
+            selectinload(Appointment.session),
+        )
         .join(Session)
         .where(
             Appointment.patient_id == patient.id,
@@ -156,7 +157,10 @@ async def appointment_history(
 
     result = await db.execute(
         select(Appointment)
-        .options(selectinload(Appointment.diagnosis))
+        .options(
+            selectinload(Appointment.diagnosis),
+            selectinload(Appointment.session),
+        )
         .join(Session)
         .where(
             Appointment.patient_id == patient.id,
