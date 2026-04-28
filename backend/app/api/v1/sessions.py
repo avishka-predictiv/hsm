@@ -77,6 +77,30 @@ async def create_session(
     return session
 
 
+@router.get("/{session_id}/info")
+async def session_info(session_id: str, db: AsyncSession = Depends(get_db)):
+    """Return session details + doctor's consultation fee. No auth required (used on booking page)."""
+    from sqlalchemy import select as _select
+    res = await db.execute(
+        _select(Session, Doctor, User)
+        .join(Doctor, Doctor.id == Session.doctor_id)
+        .join(User, User.id == Doctor.user_id)
+        .where(Session.id == session_id)
+    )
+    row = res.first()
+    if not row:
+        raise HTTPException(status_code=404, detail="Session not found")
+    session, doctor, user = row
+    return {
+        "session_id": session_id,
+        "date": str(session.date),
+        "start_time": session.start_time[:5],
+        "doctor_id": doctor.id,
+        "doctor_email": user.email,
+        "consultation_fee": float(doctor.consultation_fee) if doctor.consultation_fee else 0.0,
+    }
+
+
 @router.post("/{session_id}/start")
 async def start_session(
     session_id: str,

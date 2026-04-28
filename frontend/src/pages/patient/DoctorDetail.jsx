@@ -174,7 +174,7 @@ export default function DoctorDetail() {
                           {s.slot_duration_mins} min slots · max {s.max_patients} patients
                         </div>
                       </div>
-                      <button className="btn btn-primary btn-sm" type="button" onClick={() => navigate(`/patient/book/${s.session_id}`)}>
+                      <button className="btn btn-primary btn-sm" type="button" onClick={() => navigate(`/patient/book/${s.session_id}`, { state: { consultation_fee: doctor.consultation_fee } })}>
                         Book
                       </button>
                     </div>

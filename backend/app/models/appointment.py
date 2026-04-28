@@ -74,6 +74,12 @@ class Appointment(Base):
     diagnosis = relationship("Diagnosis", back_populates="appointment", uselist=False, cascade="all, delete-orphan")
     payment = relationship("Payment", back_populates="appointment", uselist=False, cascade="all, delete-orphan")
 
+    @property
+    def consultation_fee(self) -> float | None:
+        if self.doctor is not None and self.doctor.consultation_fee is not None:
+            return float(self.doctor.consultation_fee)
+        return None
+
 
 class AppointmentAttachment(Base):
     __tablename__ = "appointment_attachments"

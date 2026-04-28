@@ -98,23 +98,37 @@ async def book_appointment(
     db.add(appointment)
     await db.flush()
 
+    # Lookup doctor email for notification
+    doc_user_res = await db.execute(
+        select(User.email)
+        .join(Doctor, Doctor.user_id == User.id)
+        .where(Doctor.id == session.doctor_id)
+    )
+    doc_row = doc_user_res.first()
+    doctor_email = doc_row[0] if doc_row else ""
+
+    await notif_svc.notify_appointment_booked(
+        db=db,
+        user_id=current_user.id,
+        user_email=current_user.email,
+        patient_mobile=getattr(patient, "mobile", None),
+        appointment_id=appointment.id,
+        doctor_email=doctor_email,
+        session_date=str(session.date),
+        session_time=session.start_time,
+        slot_number=slot_number,
+    )
+
     result = await db.execute(
         select(Appointment)
         .options(
             selectinload(Appointment.diagnosis),
             selectinload(Appointment.session),
+            selectinload(Appointment.doctor),
         )
         .where(Appointment.id == appointment.id)
     )
-    appointment = result.scalar_one()
-    return appointment
-    # Re-load with relationships to avoid async lazy-load during response serialization
-    loaded = await db.execute(
-        select(Appointment)
-        .options(selectinload(Appointment.diagnosis))
-        .where(Appointment.id == appointment.id)
-    )
-    return loaded.scalar_one()
+    return result.scalar_one()
 
 
 @router.get("/upcoming", response_model=List[AppointmentOut])
@@ -133,6 +147,7 @@ async def upcoming_appointments(
         .options(
             selectinload(Appointment.diagnosis),
             selectinload(Appointment.session),
+            selectinload(Appointment.doctor),
         )
         .join(Session)
         .where(
@@ -160,6 +175,7 @@ async def appointment_history(
         .options(
             selectinload(Appointment.diagnosis),
             selectinload(Appointment.session),
+            selectinload(Appointment.doctor),
         )
         .join(Session)
         .where(

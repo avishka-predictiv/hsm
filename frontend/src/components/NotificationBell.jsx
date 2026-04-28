@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { formatDistanceToNow, parseISO } from "date-fns";
 import { notificationApi } from "../api";
 import Ico from "./Ico";
+import toast from "react-hot-toast";
 
 const TYPE_ICON = {
   appointment_booked: "calendarCheck",
@@ -41,6 +42,24 @@ export default function NotificationBell() {
     mutationFn: () => notificationApi.markAllRead(),
     onSuccess: invalidate,
   });
+
+  // Show a toast whenever a new unread notification arrives
+  const seenIds = useRef(null);
+  useEffect(() => {
+    if (notifications.length === 0) return;
+    const ids = new Set(notifications.map((n) => n.id));
+    if (seenIds.current === null) {
+      // First load — just record what's already there, no toasts
+      seenIds.current = ids;
+      return;
+    }
+    notifications
+      .filter((n) => !n.is_read && !seenIds.current.has(n.id) && n.type !== "appointment_cancelled")
+      .forEach((n) => {
+        toast.success(n.message, { duration: 5000 });
+      });
+    seenIds.current = ids;
+  }, [notifications]);
 
   // Close dropdown when clicking outside
   useEffect(() => {

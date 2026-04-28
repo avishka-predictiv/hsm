@@ -41,7 +41,7 @@ export default function SessionHistory() {
         {["upcoming", "past"].map(t => (
           <button key={t} onClick={() => setTab(t)}
             className={`px-5 py-2 rounded-lg text-sm font-medium transition-all capitalize ${tab === t ? "bg-primary-600 text-white" : "text-fg-subtle hover:text-fg"}`}>
-            {t === "upcoming" ? "📅 Upcoming" : "📁 Past"}
+            {t === "upcoming" ? "Upcoming" : "Past"}
           </button>
         ))}
       </div>

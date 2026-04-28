@@ -1,8 +1,7 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { appointmentApi, doctorApi, paymentApi, sessionApi } from "../../api";
-import Avatar from "../../components/Avatar";
+import { appointmentApi, paymentApi, sessionApi } from "../../api";
 import Ico from "../../components/Ico";
 import Modal from "../../components/Modal";
 import EmptyState from "../../components/EmptyState";
@@ -29,8 +28,13 @@ export default function BookAppointment() {
     enabled: !!sessionId,
   });
 
-  // We don't have a session details endpoint; we show slot info + basic copy.
-  const hasAvailable = slots.some((s) => s.is_available);
+  const { data: sessionInfo } = useQuery({
+    queryKey: ["session-info", sessionId],
+    queryFn: () => sessionApi.info(sessionId).then((r) => r.data),
+    enabled: !!sessionId,
+  });
+
+  const fee = sessionInfo?.consultation_fee ?? 0;
 
   const bookMutation = useMutation({
     mutationFn: () =>
@@ -44,6 +48,8 @@ export default function BookAppointment() {
       setLastAppointment(appt);
       setShowPayModal(true);
       qc.invalidateQueries({ queryKey: ["upcoming-appts"] });
+      qc.invalidateQueries({ queryKey: ["notifications"] });
+      qc.invalidateQueries({ queryKey: ["notifications-count"] });
     },
     onError: (e) => {
       toast.error(e?.response?.data?.detail || "Booking failed");
@@ -51,7 +57,7 @@ export default function BookAppointment() {
   });
 
   const payMutation = useMutation({
-    mutationFn: () => paymentApi.create({ appointment_id: lastAppointment.id, amount: 0, method: "mock" }).then((r) => r.data),
+    mutationFn: () => paymentApi.create({ appointment_id: lastAppointment.id, amount: fee, method: "mock" }).then((r) => r.data),
     onSuccess: () => {
       toast.success("Payment successful");
       setShowPayModal(false);
@@ -107,6 +113,14 @@ export default function BookAppointment() {
         <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
           <div className="card card-p">
             <div style={{ fontWeight: 700, marginBottom: 14 }}>Consultation Details</div>
+
+            {fee > 0 && (
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "rgba(26,127,230,.07)", border: "1px solid rgba(26,127,230,.18)", borderRadius: 10, padding: "10px 14px", marginBottom: 14 }}>
+                <span style={{ fontSize: 13, color: "var(--ink-mute)" }}>Consultation Fee</span>
+                <span style={{ fontSize: 15, fontWeight: 750, color: "var(--brand-500)" }}>{formatCurrencyLKR(fee)}</span>
+              </div>
+            )}
+
             <div style={{ marginBottom: 14 }}>
               <label className="label">Symptoms / Reason for visit</label>
               <textarea className="input" rows={5} placeholder="Describe your symptoms…" value={symptoms} onChange={(e) => setSymptoms(e.target.value)} />
@@ -172,7 +186,7 @@ export default function BookAppointment() {
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14 }}>
                 <span style={{ color: "var(--ink-mute)" }}>Total</span>
-                <span style={{ fontWeight: 750, color: "var(--brand-500)" }}>{formatCurrencyLKR(0)}</span>
+                <span style={{ fontWeight: 750, color: "var(--brand-500)" }}>{formatCurrencyLKR(fee)}</span>
               </div>
             </div>
             <button
@@ -182,7 +196,7 @@ export default function BookAppointment() {
               disabled={payMutation.isPending}
               onClick={() => payMutation.mutate()}
             >
-              Pay {formatCurrencyLKR(0)}
+              Pay {formatCurrencyLKR(fee)}
             </button>
           </>
         )}

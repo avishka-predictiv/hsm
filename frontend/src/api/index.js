@@ -82,6 +82,7 @@ export const appointmentApi = {
 
 export const sessionApi = {
   today: () => api.get("/sessions/today"),
+  info: (id) => api.get(`/sessions/${id}/info`),
   mySessions: (upcoming = true) => api.get("/sessions/my", { params: { upcoming } }),
   create: (data) => api.post("/sessions", data),
   start: (id) => api.post(`/sessions/${id}/start`),
