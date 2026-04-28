@@ -14,7 +14,7 @@
     "postcss": "^8.5.10",
     "tailwindcss": "^3.4.19",
     "typescript": "~6.0.2",
-    "vite": "^5.4.21"
+    "vite": "^7.0.0"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.100.1",

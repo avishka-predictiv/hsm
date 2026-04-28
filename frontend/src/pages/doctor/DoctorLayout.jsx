@@ -3,6 +3,7 @@ import { useAuth } from "../../context/AuthContext";
 import ThemeToggle from "../../components/ThemeToggle";
 import Ico from "../../components/Ico";
 import Avatar from "../../components/Avatar";
+import NotificationBell from "../../components/NotificationBell";
 
 const NAV = [
   { to: "/doctor", icon: "home", label: "Dashboard", end: true },
@@ -75,6 +76,7 @@ export default function DoctorLayout() {
           <div style={{ fontSize: 13, color: "var(--ink-mute)", fontWeight: 500 }}>Doctor Workspace</div>
           <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
             <ThemeToggle />
+            <NotificationBell />
             <div style={{ width: 1, height: 18, background: "var(--border)", margin: "0 4px" }} />
             <Avatar email={user?.email || ""} size={30} radius={8} />
           </div>
