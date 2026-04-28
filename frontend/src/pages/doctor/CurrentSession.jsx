@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { sessionApi } from "../../api";
@@ -313,33 +313,6 @@ function DiagnosisFormController({
     }
   }, [pendingMedReasoner, onConsumeMedReasoner]);
 
-  // Persist MedReasoner output immediately (draft) so it isn't lost.
-  // Backend is configured to NOT mark appointment completed unless doctor diagnosis is provided.
-  const { mutate: saveMedReasonerDraft, isPending: isSavingMedReasonerDraft } = useMutation({
-    mutationFn: (data) => sessionApi.saveDiagnosis(sessionId, apptId, data),
-    onSuccess: () => {
-      qc.invalidateQueries(["session-patients", sessionId]);
-      toast.success("MedReasoner output saved");
-    },
-    onError: () => toast.error("Failed to save MedReasoner output"),
-  });
-
-  const lastAutoSavedRef = useRef({ apptId: null, sessionId: null });
-  useEffect(() => {
-    if (!pendingMedReasoner || !apptId || !sessionId) return;
-    const text = (pendingMedReasoner.text || "").trim();
-    if (!text) return;
-    // prevent repeat autosaves for same appointment + medreasoner session
-    const key = `${apptId}:${pendingMedReasoner.sessionId || ""}`;
-    if (lastAutoSavedRef.current.sessionId === key) return;
-    lastAutoSavedRef.current.sessionId = key;
-    saveMedReasonerDraft({
-      symptoms_observed: form.symptoms_observed || undefined,
-      medreasoner_diagnosis: text,
-      medreasoner_session_id: pendingMedReasoner.sessionId || undefined,
-    });
-  }, [pendingMedReasoner, apptId, sessionId, form.symptoms_observed, saveMedReasonerDraft]);
-
   const handle = (e) => setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
 
   const { mutate: save, isPending } = useMutation({
@@ -391,7 +364,6 @@ function DiagnosisFormController({
               medreasoner_session_id: form.medreasoner_session_id,
             })
           }
-          disabled={isSavingMedReasonerDraft}
           className="mt-2 w-full inline-flex items-center justify-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold
                      bg-gradient-to-r from-primary-600 to-accent-500 text-white shadow hover:shadow-lg
                      transition disabled:opacity-50"
