@@ -12,6 +12,7 @@ class SpecializationOut(BaseModel):
 
 
 class DoctorProfileCreate(BaseModel):
+    name: Optional[str] = None
     nic: str
     mobile: str
     reg_number: str
@@ -24,6 +25,7 @@ class DoctorProfileCreate(BaseModel):
 
 
 class DoctorProfileUpdate(BaseModel):
+    name: Optional[str] = None
     mobile: Optional[str] = None
     specialization_ids: Optional[List[int]] = None
     years_experience: Optional[int] = None
@@ -36,6 +38,7 @@ class DoctorProfileUpdate(BaseModel):
 class DoctorOut(BaseModel):
     id: str
     user_id: str
+    name: Optional[str] = None
     nic: str
     mobile: str
     reg_number: str

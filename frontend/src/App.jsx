@@ -27,6 +27,7 @@ import NotificationSettings from "./pages/patient/NotificationSettings";
 import DoctorLayout from "./pages/doctor/DoctorLayout";
 import DoctorHome from "./pages/doctor/DoctorHome";
 import DoctorProfilePage from "./pages/doctor/DoctorProfilePage";
+import DoctorSchedulePage from "./pages/doctor/DoctorSchedulePage";
 import TodaySessions from "./pages/doctor/TodaySessions";
 import CurrentSession from "./pages/doctor/CurrentSession";
 import SessionHistory from "./pages/doctor/SessionHistory";
@@ -104,7 +105,7 @@ export default function App() {
             <Route path="/doctor" element={<ProtectedRoute allowedRoles={["doctor"]}><DoctorLayout /></ProtectedRoute>}>
               <Route index element={<DoctorHome />} />
               <Route path="appointments" element={<SessionHistory />} />
-              <Route path="schedule" element={<DoctorProfilePage />} />
+              <Route path="schedule" element={<DoctorSchedulePage />} />
               <Route path="profile" element={<DoctorProfilePage />} />
               <Route path="today" element={<TodaySessions />} />
               <Route path="session/:id" element={<CurrentSession />} />

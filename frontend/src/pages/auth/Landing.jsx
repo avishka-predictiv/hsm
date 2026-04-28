@@ -7,7 +7,7 @@ import { authApi } from "../../api";
 import toast from "react-hot-toast";
 
 const GOOGLE_AUTH_URL = (role) =>
-  `${import.meta.env.VITE_API_URL || "http://localhost:8000/api/v1"}/auth/google?role=${role}`;
+  `${import.meta.env.VITE_API_URL || ""}/auth/google?role=${role}`;
 
 function FeatureCard({ icon, color, title, desc }) {
   return (

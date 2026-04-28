@@ -8,12 +8,15 @@ import toast from "react-hot-toast";
 import ThemeToggle from "../../components/ThemeToggle";
 
 function PatientForm({ onSubmit, loading }) {
-  const [form, setForm] = useState({ nic: "", mobile: "", address: "", dob: "", gender: "", blood_group: "", emergency_contact_name: "", emergency_contact_phone: "", known_allergies: "" });
+  const [form, setForm] = useState({ name: "", nic: "", mobile: "", address: "", dob: "", gender: "", blood_group: "", emergency_contact_name: "", emergency_contact_phone: "", known_allergies: "" });
   const handle = (e) => setForm(p => ({ ...p, [e.target.name]: e.target.value }));
   return (
     <form onSubmit={e => { e.preventDefault(); onSubmit(form); }} className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
+        <div><label className="input-label">Full Name *</label><input name="name" required value={form.name} onChange={handle} className="input-field" placeholder="Your full name" /></div>
         <div><label className="input-label">NIC *</label><input name="nic" required value={form.nic} onChange={handle} className="input-field" placeholder="NIC number" /></div>
+      </div>
+      <div className="grid grid-cols-2 gap-4">
         <div><label className="input-label">Mobile *</label><input name="mobile" required value={form.mobile} onChange={handle} className="input-field" placeholder="+94 7X XXX XXXX" /></div>
       </div>
       <div><label className="input-label">Address *</label><textarea name="address" required value={form.address} onChange={handle} className="input-field" rows={2} placeholder="Full address" /></div>
@@ -48,7 +51,7 @@ function PatientForm({ onSubmit, loading }) {
 
 function DoctorForm({ onSubmit, loading }) {
   const { data: specs } = useQuery({ queryKey: ["specializations"], queryFn: () => specializationApi.list().then(r => r.data) });
-  const [form, setForm] = useState({ nic: "", mobile: "", reg_number: "", years_experience: "", qualifications: "", consultation_fee: "", affiliation: "", bio: "", specialization_ids: [] });
+  const [form, setForm] = useState({ name: "", nic: "", mobile: "", reg_number: "", years_experience: "", qualifications: "", consultation_fee: "", affiliation: "", bio: "", specialization_ids: [] });
   const handle = (e) => setForm(p => ({ ...p, [e.target.name]: e.target.value }));
   const toggleSpec = (id) => setForm(p => ({ ...p, specialization_ids: p.specialization_ids.includes(id) ? p.specialization_ids.filter(x => x !== id) : [...p.specialization_ids, id] }));
   const [specSearch, setSpecSearch] = useState("");
@@ -57,7 +60,10 @@ function DoctorForm({ onSubmit, loading }) {
   return (
     <form onSubmit={e => { e.preventDefault(); onSubmit({ ...form, years_experience: form.years_experience ? Number(form.years_experience) : undefined, consultation_fee: form.consultation_fee ? Number(form.consultation_fee) : undefined }); }} className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
+        <div><label className="input-label">Full Name *</label><input name="name" required value={form.name} onChange={handle} className="input-field" /></div>
         <div><label className="input-label">NIC *</label><input name="nic" required value={form.nic} onChange={handle} className="input-field" /></div>
+      </div>
+      <div className="grid grid-cols-2 gap-4">
         <div><label className="input-label">Mobile *</label><input name="mobile" required value={form.mobile} onChange={handle} className="input-field" /></div>
       </div>
       <div><label className="input-label">Doctor Registration Number *</label><input name="reg_number" required value={form.reg_number} onChange={handle} className="input-field" placeholder="SLMC number" /></div>

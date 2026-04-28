@@ -46,6 +46,7 @@ function ProfileTab() {
     <div className="space-y-4">
       <Section title="Personal Information">
         <div className="grid grid-cols-2 gap-4">
+          {field("Name", "name")}
           {field("NIC", "nic")}
           {field("Mobile", "mobile")}
           {field("Date of Birth", "dob", "date")}

@@ -217,8 +217,10 @@ async def save_diagnosis(
             **data.model_dump(),
         )
         db.add(diag)
-        # Mark appointment completed
-        appt.status = AppointmentStatus.completed
+        # Only mark appointment completed when doctor provides a final diagnosis.
+        # This prevents AI-only drafts (e.g., MedReasoner output) from completing the visit.
+        if (data.diagnosis or "").strip():
+            appt.status = AppointmentStatus.completed
 
     await db.flush()
     return diag
