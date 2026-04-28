@@ -4,7 +4,7 @@ from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 
 from app.core.config import settings
-from app.api.v1 import auth, patients, doctors, appointments, sessions, payments, specializations, admin
+from app.api.v1 import auth, patients, doctors, appointments, sessions, payments, specializations, admin, notifications
 
 app = FastAPI(
     title=settings.APP_NAME,
@@ -35,6 +35,19 @@ app.include_router(sessions.router, prefix=PREFIX)
 app.include_router(payments.router, prefix=PREFIX)
 app.include_router(specializations.router, prefix=PREFIX)
 app.include_router(admin.router, prefix=PREFIX)
+app.include_router(notifications.router, prefix=PREFIX)
+
+
+@app.on_event("startup")
+async def _startup_log():
+    if settings.TWILIO_ACCOUNT_SID:
+        print(f"[NOTIF] Twilio ready  SID={settings.TWILIO_ACCOUNT_SID[:8]}...  FROM={settings.TWILIO_FROM_NUMBER}")
+    else:
+        print("[NOTIF] Twilio NOT configured — SMS disabled")
+    if settings.MAIL_USERNAME and "your-email" not in settings.MAIL_USERNAME:
+        print(f"[NOTIF] Email ready  FROM={settings.MAIL_FROM}")
+    else:
+        print("[NOTIF] Email NOT configured — email disabled")
 
 
 @app.get("/api/health")

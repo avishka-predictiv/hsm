@@ -13,6 +13,7 @@ from app.models.patient import Patient
 from app.models.doctor import Doctor
 from app.models.appointment import Appointment, AppointmentStatus, AppointmentAttachment, Session
 from app.schemas.appointment import AppointmentCreate, AppointmentOut, AppointmentCancelRequest, SlotInfo
+from app.services import notification as notif_svc
 
 router = APIRouter(prefix="/appointments", tags=["Appointments"])
 
@@ -89,6 +90,24 @@ async def book_appointment(
     )
     db.add(appointment)
     await db.flush()
+
+    # Get doctor email for the notification message
+    dr_email_res = await db.execute(
+        select(User.email).join(Doctor, Doctor.user_id == User.id).where(Doctor.id == session.doctor_id)
+    )
+    doctor_email = dr_email_res.scalar_one_or_none() or "doctor"
+
+    await notif_svc.notify_appointment_booked(
+        db=db,
+        user_id=current_user.id,
+        user_email=current_user.email,
+        patient_mobile=patient.mobile,
+        appointment_id=appointment.id,
+        doctor_email=doctor_email,
+        session_date=str(session.date),
+        session_time=session.start_time,
+        slot_number=slot_number,
+    )
     return appointment
 
 
@@ -187,6 +206,33 @@ async def cancel_appointment(
     appt.status = _get_status_for_cancellation(current_user.role)
     appt.cancellation_reason = data.reason
     appt.cancelled_at = now
+
+    # Resolve the patient's user + mobile for notification (always notify the patient)
+    if current_user.role == "patient":
+        patient_user_id = current_user.id
+        patient_user_email = current_user.email
+        patient_mobile = patient.mobile
+    else:
+        pat_user_res = await db.execute(
+            select(User.id, User.email, Patient.mobile)
+            .join(Patient, Patient.user_id == User.id)
+            .where(Patient.id == appt.patient_id)
+        )
+        row = pat_user_res.first()
+        patient_user_id = row[0] if row else None
+        patient_user_email = row[1] if row else None
+        patient_mobile = row[2] if row else None
+
+    if patient_user_id and patient_user_email:
+        await notif_svc.notify_appointment_cancelled(
+            db=db,
+            user_id=patient_user_id,
+            user_email=patient_user_email,
+            patient_mobile=patient_mobile,
+            appointment_id=appt.id,
+            refund_policy=refund_policy,
+            reason=data.reason,
+        )
 
     return {
         "message": "Appointment cancelled",

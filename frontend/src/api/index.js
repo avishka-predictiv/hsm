@@ -102,6 +102,14 @@ export const specializationApi = {
   list: () => api.get("/specializations"),
 };
 
+export const notificationApi = {
+  list: () => api.get("/notifications"),
+  unreadCount: () => api.get("/notifications/unread-count"),
+  markRead: (id) => api.put(`/notifications/${id}/read`),
+  markAllRead: () => api.put("/notifications/read-all"),
+  delete: (id) => api.delete(`/notifications/${id}`),
+};
+
 export const adminApi = {
   stats: () => api.get("/admin/stats"),
   users: (params) => api.get("/admin/users", { params }),
