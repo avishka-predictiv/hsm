@@ -108,7 +108,9 @@ async def complete_patient_profile(
     if current_user.profile_complete:
         raise HTTPException(status_code=400, detail="Profile already complete")
 
-    patient = Patient(user_id=current_user.id, **data.model_dump())
+    patient_data = data.model_dump(exclude={"name"})
+    patient = Patient(user_id=current_user.id, **patient_data)
+    current_user.name = data.name
     db.add(patient)
     current_user.profile_complete = True
     # Flush so uniqueness/constraint errors happen before returning success.
@@ -128,8 +130,9 @@ async def complete_doctor_profile(
         raise HTTPException(status_code=400, detail="Profile already complete")
 
     spec_ids = data.specialization_ids
-    doctor_data = data.model_dump(exclude={"specialization_ids"})
+    doctor_data = data.model_dump(exclude={"specialization_ids", "name"})
     doctor = Doctor(user_id=current_user.id, **doctor_data)
+    current_user.name = data.name
 
     # Attach specializations
     specs = await db.execute(

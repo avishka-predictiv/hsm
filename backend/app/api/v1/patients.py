@@ -23,6 +23,7 @@ async def get_my_profile(
     patient = result.scalar_one_or_none()
     if not patient:
         raise HTTPException(status_code=404, detail="Profile not found")
+    patient.name = current_user.name
     return patient
 
 
@@ -36,7 +37,10 @@ async def update_my_profile(
     patient = result.scalar_one_or_none()
     if not patient:
         raise HTTPException(status_code=404, detail="Profile not found")
-    for k, v in data.model_dump(exclude_unset=True).items():
+    update_data = data.model_dump(exclude_unset=True)
+    if "name" in update_data:
+        current_user.name = update_data.pop("name")
+    for k, v in update_data.items():
         setattr(patient, k, v)
     return patient
 
