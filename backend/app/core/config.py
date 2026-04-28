@@ -35,6 +35,11 @@ class Settings(BaseSettings):
     MAIL_TLS: bool = True
     MAIL_SSL: bool = False
 
+    # Twilio SMS
+    TWILIO_ACCOUNT_SID: str = ""
+    TWILIO_AUTH_TOKEN: str = ""
+    TWILIO_FROM_NUMBER: str = ""   # e.g. +14155238886
+
     # Storage
     UPLOAD_DIR: str = "./uploads"
 

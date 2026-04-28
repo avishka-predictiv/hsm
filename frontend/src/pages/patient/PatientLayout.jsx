@@ -3,6 +3,7 @@ import { useAuth } from "../../context/AuthContext";
 import ThemeToggle from "../../components/ThemeToggle";
 import Ico from "../../components/Ico";
 import Avatar from "../../components/Avatar";
+import NotificationBell from "../../components/NotificationBell";
 
 const NAV = [
   { to: "/patient", icon: "home", label: "Dashboard", end: true },
@@ -77,21 +78,7 @@ export default function PatientLayout() {
           <div style={{ fontSize: 13, color: "var(--ink-mute)", fontWeight: 500 }}>Hospital Management System</div>
           <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
             <ThemeToggle />
-            <button className="btn-ghost btn-icon" type="button" style={{ position: "relative" }} aria-label="Notifications">
-              <Ico n="bell" size={18} />
-              <span
-                style={{
-                  position: "absolute",
-                  top: 6,
-                  right: 6,
-                  width: 6,
-                  height: 6,
-                  borderRadius: "50%",
-                  background: "var(--rose)",
-                  border: "1.5px solid var(--panel)",
-                }}
-              />
-            </button>
+            <NotificationBell />
             <div style={{ width: 1, height: 18, background: "var(--border)", margin: "0 4px" }} />
             <NavLink to="/patient/profile" aria-label="Profile">
               <Avatar email={user?.email || ""} size={30} radius={8} />

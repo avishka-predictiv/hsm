@@ -89,31 +89,44 @@ export default function FindDoctors() {
               onClick={() => navigate({ pathname: `/patient/doctors/${d.id}` })}
               onKeyDown={(e) => e.key === "Enter" && navigate({ pathname: `/patient/doctors/${d.id}` })}
             >
-              <div style={{ display: "flex", gap: 14, alignItems: "flex-start", marginBottom: 14 }}>
-                <Avatar name={d.email?.split("@")[0]} email={d.email} size={52} radius={14} />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 750, fontSize: 15, marginBottom: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {d.email ? d.email.split("@")[0].replace(/\./g, " ") : "Doctor"}
-                  </div>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-                    {(d.specializations || []).slice(0, 3).map((s) => (
-                      <span key={s.id} className="badge badge-blue" style={{ fontSize: 11 }}>
-                        {s.name}
-                      </span>
-                    ))}
-                    {(d.specializations || []).length > 3 ? <span className="badge badge-neutral" style={{ fontSize: 11 }}>+{(d.specializations || []).length - 3}</span> : null}
+              {/* Top content grows to fill card — pushes button to bottom */}
+              <div style={{ flex: 1 }}>
+                <div style={{ display: "flex", gap: 14, alignItems: "flex-start", marginBottom: 12 }}>
+                  <Avatar name={d.email?.split("@")[0]} email={d.email} size={52} radius={14} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 750, fontSize: 15, marginBottom: 6, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {d.email ? d.email.split("@")[0].replace(/\./g, " ") : "Doctor"}
+                    </div>
+                    {/* Fixed-height badge row — prevents card height variance */}
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 4, overflow: "hidden", maxHeight: 46 }}>
+                      {(d.specializations || []).slice(0, 2).map((s) => (
+                        <span
+                          key={s.id}
+                          className="badge badge-blue"
+                          style={{ fontSize: 11, maxWidth: 140, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                          title={s.name}
+                        >
+                          {s.name}
+                        </span>
+                      ))}
+                      {(d.specializations || []).length > 2 && (
+                        <span className="badge badge-neutral" style={{ fontSize: 11 }}>
+                          +{(d.specializations || []).length - 2}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div style={{ display: "flex", gap: 16, fontSize: 12, color: "var(--ink-mute)", marginBottom: 14 }}>
-                <span>
-                  <strong style={{ color: "var(--ink)", fontWeight: 650 }}>{d.years_experience ?? "—"}</strong> yrs exp
-                </span>
-                <span style={{ color: "var(--border-strong)" }}>·</span>
-                <span>
-                  <strong style={{ color: "var(--ink)", fontWeight: 650 }}>{formatCurrencyLKR(d.consultation_fee)}</strong>
-                </span>
+                <div style={{ display: "flex", gap: 16, fontSize: 12, color: "var(--ink-mute)", marginBottom: 14 }}>
+                  <span>
+                    <strong style={{ color: "var(--ink)", fontWeight: 650 }}>{d.years_experience ?? "—"}</strong> yrs exp
+                  </span>
+                  <span style={{ color: "var(--border-strong)" }}>·</span>
+                  <span>
+                    <strong style={{ color: "var(--ink)", fontWeight: 650 }}>{formatCurrencyLKR(d.consultation_fee)}</strong>
+                  </span>
+                </div>
               </div>
 
               <button

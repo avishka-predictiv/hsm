@@ -14,6 +14,7 @@ from app.models.patient import Patient
 from app.models.doctor import Doctor
 from app.models.appointment import Appointment, AppointmentStatus, AppointmentAttachment, Session
 from app.schemas.appointment import AppointmentCreate, AppointmentOut, AppointmentCancelRequest, SlotInfo
+from app.services import notification as notif_svc
 
 router = APIRouter(prefix="/appointments", tags=["Appointments"])
 
@@ -107,6 +108,13 @@ async def book_appointment(
     )
     appointment = result.scalar_one()
     return appointment
+    # Re-load with relationships to avoid async lazy-load during response serialization
+    loaded = await db.execute(
+        select(Appointment)
+        .options(selectinload(Appointment.diagnosis))
+        .where(Appointment.id == appointment.id)
+    )
+    return loaded.scalar_one()
 
 
 @router.get("/upcoming", response_model=List[AppointmentOut])
@@ -212,6 +220,33 @@ async def cancel_appointment(
     appt.status = _get_status_for_cancellation(current_user.role)
     appt.cancellation_reason = data.reason
     appt.cancelled_at = now
+
+    # Resolve the patient's user + mobile for notification (always notify the patient)
+    if current_user.role == "patient":
+        patient_user_id = current_user.id
+        patient_user_email = current_user.email
+        patient_mobile = patient.mobile
+    else:
+        pat_user_res = await db.execute(
+            select(User.id, User.email, Patient.mobile)
+            .join(Patient, Patient.user_id == User.id)
+            .where(Patient.id == appt.patient_id)
+        )
+        row = pat_user_res.first()
+        patient_user_id = row[0] if row else None
+        patient_user_email = row[1] if row else None
+        patient_mobile = row[2] if row else None
+
+    if patient_user_id and patient_user_email:
+        await notif_svc.notify_appointment_cancelled(
+            db=db,
+            user_id=patient_user_id,
+            user_email=patient_user_email,
+            patient_mobile=patient_mobile,
+            appointment_id=appt.id,
+            refund_policy=refund_policy,
+            reason=data.reason,
+        )
 
     return {
         "message": "Appointment cancelled",
