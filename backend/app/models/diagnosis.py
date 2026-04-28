@@ -25,6 +25,10 @@ class Diagnosis(Base):
     ai_summary: Mapped[str | None] = mapped_column(Text, nullable=True)
     ai_generated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
+    # MedReasoner (CliniqReason) saved chat diagnosis output and the chat session id
+    medreasoner_diagnosis: Mapped[str | None] = mapped_column(Text, nullable=True)
+    medreasoner_session_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 

@@ -143,9 +143,21 @@ async def get_session_patients(
                 "mobile": patient.mobile,
                 "blood_group": patient.blood_group,
                 "known_allergies": patient.known_allergies,
+                "chronic_conditions": patient.chronic_conditions,
+                "dob": patient.dob.isoformat() if patient.dob else None,
+                "gender": patient.gender,
             },
             "has_diagnosis": diag is not None,
             "symptoms_text": appt.symptoms_text,
+            "diagnosis": ({
+                "symptoms_observed": diag.symptoms_observed,
+                "diagnosis": diag.diagnosis,
+                "prescription": diag.prescription,
+                "follow_up_notes": diag.follow_up_notes,
+                "next_visit_date": diag.next_visit_date.isoformat() if diag.next_visit_date else None,
+                "medreasoner_diagnosis": diag.medreasoner_diagnosis,
+                "medreasoner_session_id": diag.medreasoner_session_id,
+            } if diag else None),
         })
     return patients_out
 
