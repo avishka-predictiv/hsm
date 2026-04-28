@@ -19,7 +19,6 @@ export default function BookAppointment() {
   const { sessionId } = useParams();
   const [symptoms, setSymptoms] = useState("");
   const [terms, setTerms] = useState(false);
-  const [selectedSlot, setSelectedSlot] = useState(null);
   const [showPayModal, setShowPayModal] = useState(false);
   const [lastAppointment, setLastAppointment] = useState(null);
 
@@ -27,10 +26,14 @@ export default function BookAppointment() {
     queryKey: ["session-slots", sessionId],
     queryFn: () => appointmentApi.slots(sessionId).then((r) => r.data),
     enabled: !!sessionId,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
   });
 
   // We don't have a session details endpoint; we show slot info + basic copy.
   const hasAvailable = slots.some((s) => s.is_available);
+  const nextSlot = slots.find((s) => s.is_available)?.slot_number ?? null;
 
   const bookMutation = useMutation({
     mutationFn: () =>
@@ -38,12 +41,12 @@ export default function BookAppointment() {
         session_id: sessionId,
         symptoms_text: symptoms.trim() || null,
         terms_accepted: true,
-        selected_slot_number: selectedSlot,
       }).then((r) => r.data),
     onSuccess: (appt) => {
       setLastAppointment(appt);
       setShowPayModal(true);
       qc.invalidateQueries({ queryKey: ["upcoming-appts"] });
+      qc.invalidateQueries({ queryKey: ["session-slots", sessionId] });
     },
     onError: (e) => {
       toast.error(e?.response?.data?.detail || "Booking failed");
@@ -77,9 +80,9 @@ export default function BookAppointment() {
         {/* Left */}
         <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
           <div className="card card-p">
-            <div style={{ fontWeight: 700, marginBottom: 6 }}>Select a Slot</div>
+            <div style={{ fontWeight: 700, marginBottom: 6 }}>Booked by order of arrival</div>
             <p style={{ fontSize: 13, color: "var(--ink-mute)", marginBottom: 14 }}>
-              Tap an available slot to select it. Selected slot will be highlighted in blue.
+              The system assigns the next available slot automatically. Patients cannot change the slot number.
             </p>
 
             {slots.length === 0 ? (
@@ -89,10 +92,9 @@ export default function BookAppointment() {
                 {slots.map((s) => (
                   <div
                     key={s.slot_number}
-                    className={`slot ${s.is_available ? "slot-available" : "slot-booked"} ${selectedSlot === s.slot_number ? "slot-selected" : ""}`}
+                    className={`slot ${s.is_available ? "slot-available" : "slot-booked"} ${s.slot_number === nextSlot ? "slot-selected" : ""}`}
                     title={s.is_available ? `Slot #${s.slot_number} at ${s.start_time}` : "Booked"}
-                    onClick={() => s.is_available && setSelectedSlot(s.slot_number)}
-                    style={{ cursor: s.is_available ? "pointer" : "not-allowed" }}
+                    style={{ cursor: "default" }}
                   >
                     <span style={{ fontSize: 15, fontWeight: 800 }}>#{s.slot_number}</span>
                     <span style={{ fontSize: 10, marginTop: 2 }}>{s.start_time}</span>
@@ -143,19 +145,19 @@ export default function BookAppointment() {
             <button
               type="button"
               className="btn btn-primary"
-              style={{ width: "100%", justifyContent: "center", padding: "12px", opacity: terms && selectedSlot ? 1 : 0.55 }}
-              disabled={!terms || !selectedSlot || bookMutation.isPending}
+              style={{ width: "100%", justifyContent: "center", padding: "12px", opacity: terms && hasAvailable ? 1 : 0.55 }}
+              disabled={!terms || !hasAvailable || bookMutation.isPending}
               onClick={() => bookMutation.mutate()}
             >
               <Ico n="calendar" size={15} /> Confirm &amp; Proceed to Payment
             </button>
-            {selectedSlot ? (
+            {nextSlot ? (
               <p style={{ fontSize: 12, color: "var(--ink-mute)", marginTop: 8 }}>
-                Selected slot: #{selectedSlot}
+                Your assigned slot will be <strong>#{nextSlot}</strong>.
               </p>
             ) : (
               <p style={{ fontSize: 12, color: "var(--ink-mute)", marginTop: 8 }}>
-                Please select a slot before booking.
+                No available slots remain for this session.
               </p>
             )}
           </div>
