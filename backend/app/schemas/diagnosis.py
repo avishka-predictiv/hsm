@@ -10,6 +10,8 @@ class DiagnosisCreate(BaseModel):
     prescription: Optional[str] = None
     follow_up_notes: Optional[str] = None
     next_visit_date: Optional[date] = None  # doctor-recommended next visit
+    medreasoner_diagnosis: Optional[str] = None
+    medreasoner_session_id: Optional[str] = None
 
 
 class DiagnosisUpdate(BaseModel):
@@ -18,6 +20,8 @@ class DiagnosisUpdate(BaseModel):
     prescription: Optional[str] = None
     follow_up_notes: Optional[str] = None
     next_visit_date: Optional[date] = None
+    medreasoner_diagnosis: Optional[str] = None
+    medreasoner_session_id: Optional[str] = None
 
 
 class DiagnosisOut(BaseModel):
@@ -31,6 +35,8 @@ class DiagnosisOut(BaseModel):
     next_visit_date: Optional[date] = None
     ai_summary: Optional[str] = None
     ai_generated_at: Optional[datetime] = None
+    medreasoner_diagnosis: Optional[str] = None
+    medreasoner_session_id: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 
