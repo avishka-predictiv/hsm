@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
+from sqlalchemy.orm import selectinload
 from typing import List
 from datetime import datetime, timezone, timedelta
 import uuid, os, aiofiles
@@ -109,6 +110,13 @@ async def book_appointment(
         slot_number=slot_number,
     )
     return appointment
+    # Re-load with relationships to avoid async lazy-load during response serialization
+    loaded = await db.execute(
+        select(Appointment)
+        .options(selectinload(Appointment.diagnosis))
+        .where(Appointment.id == appointment.id)
+    )
+    return loaded.scalar_one()
 
 
 @router.get("/upcoming", response_model=List[AppointmentOut])
@@ -124,6 +132,7 @@ async def upcoming_appointments(
     from datetime import date
     result = await db.execute(
         select(Appointment)
+        .options(selectinload(Appointment.diagnosis))
         .join(Session)
         .where(
             Appointment.patient_id == patient.id,
@@ -147,6 +156,7 @@ async def appointment_history(
 
     result = await db.execute(
         select(Appointment)
+        .options(selectinload(Appointment.diagnosis))
         .join(Session)
         .where(
             Appointment.patient_id == patient.id,

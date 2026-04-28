@@ -60,6 +60,15 @@ class DoctorScheduleCreate(BaseModel):
     max_patients: int = 20
 
 
+class DoctorScheduleUpdate(BaseModel):
+    day_of_week: Optional[str] = None
+    start_time: Optional[str] = None
+    end_time: Optional[str] = None
+    slot_duration_mins: Optional[int] = None
+    max_patients: Optional[int] = None
+    is_active: Optional[bool] = None
+
+
 class DoctorScheduleOut(BaseModel):
     id: str
     doctor_id: str
