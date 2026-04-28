@@ -17,6 +17,24 @@ function fmtDate(s) {
   }
 }
 
+function fmtDay(s) {
+  if (!s) return "";
+  try {
+    return new Date(s).toLocaleDateString("en-GB", { day: "2-digit" });
+  } catch {
+    return "";
+  }
+}
+
+function fmtMonth(s) {
+  if (!s) return "";
+  try {
+    return new Date(s).toLocaleDateString("en-GB", { month: "short" });
+  } catch {
+    return "";
+  }
+}
+
 export default function MyAppointments() {
   const qc = useQueryClient();
   const [tab, setTab] = useState("upcoming");
@@ -67,51 +85,40 @@ export default function MyAppointments() {
           <EmptyState icon="calendar" title="No appointments" desc="You haven't booked any appointments yet." />
         </div>
       ) : (
-        <div className="card" style={{ overflow: "hidden" }}>
+        <div className="appointment-list">
           {data.map((a) => (
-            <div key={a.id} className="list-item" style={{ flexWrap: "wrap", gap: 10 }}>
-              <div
-                style={{
-                  width: 48,
-                  height: 48,
-                  borderRadius: 12,
-                  background: "rgba(26,127,230,.08)",
-                  border: "1px solid rgba(26,127,230,.15)",
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  flexShrink: 0,
-                }}
-              >
-                <div style={{ fontSize: 9, fontWeight: 650, color: "var(--brand-500)", textTransform: "uppercase" }}>
-                  {fmtDate(a.booked_at).split(" ")[1] || ""}
-                </div>
-                <div style={{ fontSize: 18, fontWeight: 850, lineHeight: 1 }}>{fmtDate(a.booked_at).split(" ")[0] || ""}</div>
+            <div key={a.id} className="appointment-card">
+              <div className="appointment-card__date">
+                <div className="appointment-card__day">{fmtDay(a.booked_at)}</div>
+                <div className="appointment-card__month">{fmtMonth(a.booked_at)}</div>
               </div>
 
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 650, fontSize: 14 }}>Slot #{a.slot_number}</div>
-                <div style={{ fontSize: 12, color: "var(--ink-mute)" }}>{fmtDate(a.booked_at)}</div>
-                {a.symptoms_text ? (
-                  <div style={{ fontSize: 12, color: "var(--ink-soft)", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 480 }}>
-                    {a.symptoms_text}
+              <div className="appointment-card__content">
+                <div className="appointment-card__header">
+                  <div>
+                    <div className="appointment-card__title">Slot #{a.slot_number}</div>
+                    <div className="appointment-card__meta">Booked on {fmtDate(a.booked_at)}</div>
                   </div>
-                ) : null}
+                  <div className="appointment-card__status-actions">
+                    <StatusBadge status={a.status} />
+                    {tab === "upcoming" ? (
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-danger-outline"
+                        onClick={() => setCancel({ id: a.id, reason: "" })}
+                      >
+                        <Ico n="x" size={12} color="var(--rose)" /> Cancel
+                      </button>
+                    ) : null}
+                  </div>
+                </div>
+
+                {a.symptoms_text ? (
+                  <div className="appointment-card__notes">{a.symptoms_text}</div>
+                ) : (
+                  <div className="appointment-card__notes appointment-card__notes--muted">No symptoms provided</div>
+                )}
               </div>
-
-              <StatusBadge status={a.status} />
-
-              {tab === "upcoming" ? (
-                <button
-                  type="button"
-                  className="btn btn-sm"
-                  style={{ background: "rgba(244,63,94,.07)", color: "var(--rose)", border: "1px solid rgba(244,63,94,.15)", flexShrink: 0 }}
-                  onClick={() => setCancel({ id: a.id, reason: "" })}
-                >
-                  <Ico n="x" size={12} color="var(--rose)" /> Cancel
-                </button>
-              ) : null}
             </div>
           ))}
         </div>

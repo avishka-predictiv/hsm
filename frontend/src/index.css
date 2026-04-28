@@ -229,6 +229,90 @@
   .tab:hover { color: var(--ink); }
   .tab.active { color: var(--brand-500); border-bottom-color: var(--brand-500); font-weight: 650; }
 
+  .appointment-list { display: flex; flex-direction: column; gap: 14px; }
+  .appointment-card {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 20px 22px;
+    border-radius: 22px;
+    border: 1px solid var(--border);
+    background: var(--panel);
+    box-shadow: var(--shadow-sm);
+  }
+  .appointment-card__date {
+    width: 72px;
+    min-width: 72px;
+    aspect-ratio: 1;
+    border-radius: 18px;
+    background: rgba(59,130,246,.08);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+  }
+  .appointment-card__day {
+    font-size: 22px;
+    font-weight: 800;
+    line-height: 1;
+    color: var(--ink);
+  }
+  .appointment-card__month {
+    margin-top: 4px;
+    font-size: 12px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--brand-500);
+  }
+  .appointment-card__content {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .appointment-card__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .appointment-card__status-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+  .appointment-card__title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--ink);
+  }
+  .appointment-card__meta {
+    font-size: 13px;
+    color: var(--ink-muted);
+  }
+  .appointment-card__notes {
+    font-size: 13px;
+    color: var(--ink-soft);
+    line-height: 1.6;
+    max-width: 100%;
+  }
+  .appointment-card__notes--muted {
+    color: var(--ink-muted);
+  }
+  .appointment-card__actions { display: flex; align-items: center; gap: 10px; }
+  .btn-danger-outline { background: rgba(244,63,94,.08); color: var(--rose); border: 1px solid rgba(244,63,94,.18); }
+  .btn-danger-outline:hover { background: rgba(244,63,94,.12); }
+  @media (max-width: 920px) {
+    .appointment-card { flex-direction: column; align-items: stretch; }
+    .appointment-card__header { align-items: flex-start; }
+    .appointment-card__actions { justify-content: flex-end; }
+  }
+
   /* Chips */
   .chip {
     display: inline-flex; align-items: center; gap: 5px;
@@ -325,7 +409,7 @@
   .slot-available { background: var(--muted); color: var(--ink-soft); border-color: var(--border); }
   .slot-available:hover { border-color: var(--brand-500); color: var(--brand-500); background: rgba(26,109,181,.06); }
   .slot-booked { background: rgba(220,38,38,.06); color: #b91c1c; border-color: rgba(220,38,38,.18); cursor: not-allowed; opacity: .7; }
-  .slot-selected { background: var(--brand-500); color: #fff; border-color: var(--brand-500); }
+  .slot-selected { background: rgba(59,130,246,.18); color: #1d4ed8; border-color: rgba(59,130,246,.35); }
 
   /* Grids */
   .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }

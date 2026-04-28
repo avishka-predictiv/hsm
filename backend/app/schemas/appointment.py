@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from pydantic import BaseModel
 from typing import Optional, List
 from datetime import datetime, date
@@ -20,6 +22,7 @@ class AppointmentCreate(BaseModel):
     session_id: str
     symptoms_text: Optional[str] = None
     terms_accepted: bool = False
+    selected_slot_number: Optional[int] = None
 
 
 class AppointmentCancelRequest(BaseModel):
@@ -43,6 +46,7 @@ class AppointmentOut(BaseModel):
     symptoms_text: Optional[str] = None
     terms_accepted: bool
     diagnosis: Optional[DiagnosisOut] = None
+    session: Optional["SessionOut"] = None
 
     model_config = {"from_attributes": True}
 
