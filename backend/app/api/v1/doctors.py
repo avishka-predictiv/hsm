@@ -83,7 +83,11 @@ async def list_doctors(
         .where(Doctor.is_verified == True)  # noqa
     )
     if name:
-        query = query.where(User.email.ilike(f"%{name}%") | Doctor.bio.ilike(f"%{name}%"))
+        query = query.where(
+            User.name.ilike(f"%{name}%")
+            | User.email.ilike(f"%{name}%")
+            | Doctor.bio.ilike(f"%{name}%")
+        )
     if specialization_id:
         query = query.join(Doctor.specializations).where(Specialization.id == specialization_id)
 
@@ -97,6 +101,7 @@ async def list_doctors(
         user = user_res.scalar_one_or_none()
         doc_out = DoctorOut.model_validate(d)
         doc_out.email = user.email if user else None
+        doc_out.name = user.name if user else None
         out.append(doc_out)
     return out
 
@@ -116,6 +121,7 @@ async def get_doctor(doctor_id: str, db: AsyncSession = Depends(get_db)):
     user = user_res.scalar_one_or_none()
     doc_out = DoctorOut.model_validate(doctor)
     doc_out.email = user.email if user else None
+    doc_out.name = user.name if user else None
     return doc_out
 
 
@@ -160,6 +166,7 @@ async def get_my_profile(
         raise HTTPException(status_code=404, detail="Profile not found")
     doc_out = DoctorOut.model_validate(doctor)
     doc_out.email = current_user.email
+    doc_out.name = current_user.name
     return doc_out
 
 
@@ -180,6 +187,8 @@ async def update_my_profile(
         raise HTTPException(status_code=404, detail="Profile not found")
 
     update_data = data.model_dump(exclude_unset=True)
+    if "name" in update_data:
+        current_user.name = update_data.pop("name")
     spec_ids = update_data.pop("specialization_ids", None)
     for k, v in update_data.items():
         setattr(doctor, k, v)

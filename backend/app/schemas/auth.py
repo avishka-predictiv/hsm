@@ -18,6 +18,7 @@ class UserBase(BaseModel):
 class UserOut(BaseModel):
     id: str
     email: str
+    name: Optional[str] = None
     role: UserRole
     is_active: bool
     profile_complete: bool
