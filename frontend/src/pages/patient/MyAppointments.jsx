@@ -1,11 +1,10 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { appointmentApi } from "../../api";
 import PageHeader from "../../components/PageHeader";
 import StatusBadge from "../../components/StatusBadge";
 import Modal from "../../components/Modal";
 import EmptyState from "../../components/EmptyState";
-import Ico from "../../components/Ico";
 import toast from "react-hot-toast";
 
 function fmtDate(s) {
@@ -58,6 +57,8 @@ export default function MyAppointments() {
       setCancel(null);
       qc.invalidateQueries({ queryKey: ["upcoming-appts"] });
       qc.invalidateQueries({ queryKey: ["appt-history"] });
+      qc.invalidateQueries({ queryKey: ["notifications"] });
+      qc.invalidateQueries({ queryKey: ["notifications-count"] });
     },
     onError: (e) => toast.error(e?.response?.data?.detail || "Cancel failed"),
   });
@@ -94,30 +95,38 @@ export default function MyAppointments() {
               </div>
 
               <div className="appointment-card__content">
-                <div className="appointment-card__header">
-                  <div>
-                    <div className="appointment-card__title">Slot #{a.slot_number}</div>
-                    <div className="appointment-card__meta">Booked on {fmtDate(a.booked_at)}</div>
-                  </div>
-                  <div className="appointment-card__status-actions">
-                    <StatusBadge status={a.status} />
-                    {tab === "upcoming" ? (
-                      <button
-                        type="button"
-                        className="btn btn-sm btn-danger-outline"
-                        onClick={() => setCancel({ id: a.id, reason: "" })}
-                      >
-                        <Ico n="x" size={12} color="var(--rose)" /> Cancel
-                      </button>
-                    ) : null}
-                  </div>
-                </div>
-
+                <div className="appointment-card__title">Slot #{a.slot_number}</div>
+                <div className="appointment-card__meta">Booked on {fmtDate(a.booked_at)}</div>
                 {a.symptoms_text ? (
                   <div className="appointment-card__notes">{a.symptoms_text}</div>
                 ) : (
                   <div className="appointment-card__notes appointment-card__notes--muted">No symptoms provided</div>
                 )}
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                <StatusBadge status={a.status} />
+                {tab === "upcoming" ? (
+                  <button
+                    type="button"
+                    onClick={() => setCancel({ id: a.id, reason: "" })}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      padding: "2px 10px",
+                      borderRadius: 999,
+                      fontSize: 11,
+                      fontWeight: 650,
+                      background: "rgba(244,63,94,.10)",
+                      color: "var(--rose)",
+                      border: "1px solid rgba(244,63,94,.22)",
+                      cursor: "pointer",
+                      lineHeight: 1.6,
+                    }}
+                  >
+                    Cancel
+                  </button>
+                ) : null}
               </div>
             </div>
           ))}

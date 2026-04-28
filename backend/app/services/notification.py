@@ -128,94 +128,66 @@ async def notify_appointment_booked(
         f"{session_date} at {session_time[:5]}. You are slot #{slot_number}."
     )
 
+    # DB write is synchronous so it's committed with the request transaction
     await _store(db, user_id, "appointment_booked", title, message)
 
-    if await _get_pref(db, user_id, NotificationChannel.email):
-        patient_name = user_email.split("@")[0].replace(".", " ").title()
-        short_id = appointment_id[-10:].upper()
-        await _send_email(
-            user_email,
-            f"Appointment Confirmed — #{short_id} | HMS",
-            f"""<!DOCTYPE html>
+    # Check prefs now (needs DB), then fire external sends in background
+    send_email = await _get_pref(db, user_id, NotificationChannel.email)
+    send_sms = bool(patient_mobile) and await _get_pref(db, user_id, NotificationChannel.mobile)
+
+    patient_name = user_email.split("@")[0].replace(".", " ").title()
+    short_id = appointment_id[-10:].upper()
+    email_html = f"""<!DOCTYPE html>
 <html lang="en">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="margin:0;padding:0;background:#f4f7fb;font-family:'Segoe UI',Arial,sans-serif;">
-
-  <!-- Wrapper -->
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f7fb;padding:40px 16px;">
     <tr><td align="center">
     <table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;">
-
-      <!-- Header -->
       <tr>
         <td style="background:linear-gradient(135deg,#1a7fe6,#0c4f9e);border-radius:14px 14px 0 0;padding:32px 36px;text-align:center;">
           <div style="font-size:28px;font-weight:800;color:#ffffff;letter-spacing:-0.5px;">HMS</div>
           <div style="font-size:13px;color:rgba(255,255,255,0.75);margin-top:4px;letter-spacing:1px;text-transform:uppercase;">Hospital Management System</div>
         </td>
       </tr>
-
-      <!-- Body -->
       <tr>
         <td style="background:#ffffff;padding:36px;border-left:1px solid #e5e9f0;border-right:1px solid #e5e9f0;">
-
-          <!-- Thank you message -->
           <div style="text-align:center;margin-bottom:28px;">
             <div style="font-size:44px;margin-bottom:8px;">&#x1F3E5;</div>
-            <h1 style="margin:0;font-size:22px;font-weight:700;color:#0f172a;">
-              Thank You for Booking!
-            </h1>
+            <h1 style="margin:0;font-size:22px;font-weight:700;color:#0f172a;">Thank You for Booking!</h1>
             <p style="margin:8px 0 0;font-size:15px;color:#475569;line-height:1.6;">
-              Dear <strong>{patient_name}</strong>, your appointment has been
-              confirmed. Please find your booking details below.
+              Dear <strong>{patient_name}</strong>, your appointment has been confirmed. Please find your booking details below.
             </p>
           </div>
-
-          <!-- Appointment details card -->
-          <table width="100%" cellpadding="0" cellspacing="0"
-                 style="background:#f0f7ff;border:1px solid #bbdcfd;border-radius:12px;margin-bottom:28px;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="background:#f0f7ff;border:1px solid #bbdcfd;border-radius:12px;margin-bottom:28px;">
             <tr>
               <td style="padding:24px 28px;">
-                <div style="font-size:11px;font-weight:700;color:#1a7fe6;text-transform:uppercase;letter-spacing:1px;margin-bottom:16px;">
-                  Appointment Details
-                </div>
-
-                <!-- Appointment No -->
+                <div style="font-size:11px;font-weight:700;color:#1a7fe6;text-transform:uppercase;letter-spacing:1px;margin-bottom:16px;">Appointment Details</div>
                 <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:12px;">
                   <tr>
                     <td style="font-size:13px;color:#64748b;width:160px;">Appointment No.</td>
-                    <td style="font-size:14px;font-weight:700;color:#0f172a;font-family:monospace;
-                               background:#1a7fe6;color:#fff;padding:3px 10px;border-radius:6px;
-                               display:inline-block;letter-spacing:1px;">#{short_id}</td>
+                    <td><span style="font-size:14px;font-weight:700;font-family:monospace;background:#1a7fe6;color:#fff;padding:3px 10px;border-radius:6px;letter-spacing:1px;">#{short_id}</span></td>
                   </tr>
                 </table>
-
                 <div style="border-top:1px solid #bbdcfd;margin:12px 0;"></div>
-
-                <!-- Doctor -->
                 <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:10px;">
                   <tr>
                     <td style="font-size:13px;color:#64748b;width:160px;">Doctor</td>
                     <td style="font-size:14px;font-weight:600;color:#0f172a;">Dr. {doctor_name.replace(".", " ").title()}</td>
                   </tr>
                 </table>
-
-                <!-- Date -->
                 <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:10px;">
                   <tr>
                     <td style="font-size:13px;color:#64748b;width:160px;">Date</td>
                     <td style="font-size:14px;font-weight:600;color:#0f172a;">{session_date}</td>
                   </tr>
                 </table>
-
-                <!-- Time -->
                 <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:10px;">
                   <tr>
                     <td style="font-size:13px;color:#64748b;width:160px;">Time</td>
                     <td style="font-size:14px;font-weight:600;color:#0f172a;">{session_time[:5]}</td>
                   </tr>
                 </table>
-
-                <!-- Slot -->
                 <table width="100%" cellpadding="0" cellspacing="0">
                   <tr>
                     <td style="font-size:13px;color:#64748b;width:160px;">Queue Slot</td>
@@ -225,15 +197,10 @@ async def notify_appointment_booked(
               </td>
             </tr>
           </table>
-
-          <!-- What to bring -->
-          <table width="100%" cellpadding="0" cellspacing="0"
-                 style="background:#f8fafc;border:1px solid #e5e9f0;border-radius:12px;margin-bottom:28px;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;border:1px solid #e5e9f0;border-radius:12px;margin-bottom:28px;">
             <tr>
               <td style="padding:20px 24px;">
-                <div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:10px;">
-                  &#x1F4CB; What to bring
-                </div>
+                <div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:10px;">&#x1F4CB; What to bring</div>
                 <ul style="margin:0;padding-left:18px;font-size:13px;color:#475569;line-height:2;">
                   <li>National Identity Card (NIC)</li>
                   <li>Previous medical records or prescriptions (if any)</li>
@@ -243,51 +210,38 @@ async def notify_appointment_booked(
               </td>
             </tr>
           </table>
-
-          <!-- Cancellation note -->
-          <table width="100%" cellpadding="0" cellspacing="0"
-                 style="background:#fff8f0;border:1px solid #fed7aa;border-radius:12px;margin-bottom:8px;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="background:#fff8f0;border:1px solid #fed7aa;border-radius:12px;margin-bottom:8px;">
             <tr>
               <td style="padding:16px 20px;">
                 <div style="font-size:13px;color:#92400e;line-height:1.6;">
                   &#x26A0;&#xFE0F; <strong>Cancellation Policy:</strong>
-                  Cancel at least <strong>24 hours</strong> before your appointment
-                  for a full refund. Cancellations within 24 hours may be subject to
-                  a partial refund or no refund.
+                  Cancel at least <strong>24 hours</strong> before your appointment for a full refund.
                 </div>
               </td>
             </tr>
           </table>
-
         </td>
       </tr>
-
-      <!-- Footer -->
       <tr>
-        <td style="background:#f8fafc;border:1px solid #e5e9f0;border-top:none;
-                   border-radius:0 0 14px 14px;padding:20px 36px;text-align:center;">
-          <p style="margin:0 0 6px;font-size:12px;color:#94a3b8;">
-            Need help? Contact us through the HMS patient portal.
-          </p>
-          <p style="margin:0;font-size:11px;color:#cbd5e1;">
-            &copy; 2026 Hospital Management System. All rights reserved.
-          </p>
+        <td style="background:#f8fafc;border:1px solid #e5e9f0;border-top:none;border-radius:0 0 14px 14px;padding:20px 36px;text-align:center;">
+          <p style="margin:0 0 6px;font-size:12px;color:#94a3b8;">Need help? Contact us through the HMS patient portal.</p>
+          <p style="margin:0;font-size:11px;color:#cbd5e1;">&copy; 2026 Hospital Management System. All rights reserved.</p>
         </td>
       </tr>
-
     </table>
     </td></tr>
   </table>
-
 </body>
-</html>""",
-        )
+</html>"""
+    sms_text = f"[HMS] Appointment confirmed with Dr. {doctor_name} on {session_date} at {session_time[:5]}. Slot #{slot_number}. ID: {appointment_id[-8:]}"
 
-    if patient_mobile and await _get_pref(db, user_id, NotificationChannel.mobile):
-        await _send_sms(
-            patient_mobile,
-            f"[HMS] Appointment confirmed with Dr. {doctor_name} on {session_date} at {session_time[:5]}. Slot #{slot_number}. ID: {appointment_id[-8:]}",
-        )
+    async def _send_booked_externals():
+        if send_email:
+            await _send_email(user_email, f"Appointment Confirmed — #{short_id} | HMS", email_html)
+        if send_sms:
+            await _send_sms(patient_mobile, sms_text)
+
+    asyncio.create_task(_send_booked_externals())
 
 
 async def notify_appointment_cancelled(
@@ -310,26 +264,29 @@ async def notify_appointment_cancelled(
     if reason:
         message += f" Reason: {reason}"
 
+    # DB write synchronous — committed with the request transaction
     await _store(db, user_id, "appointment_cancelled", title, message)
 
-    if await _get_pref(db, user_id, NotificationChannel.email):
-        await _send_email(
-            user_email,
-            f"HMS — {title}",
-            f"""
-            <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:24px">
-              <h2 style="color:#f43f5e;margin-top:0">&#x274C; Appointment Cancelled</h2>
-              <p style="font-size:15px;line-height:1.6">{message}</p>
-              <p style="color:#94a3b8;font-size:12px">Appointment ID: {appointment_id}</p>
-              <hr style="border:none;border-top:1px solid #e5e9f0;margin:20px 0"/>
-              <p style="color:#94a3b8;font-size:12px;margin:0">Hospital Management System</p>
-            </div>
-            """,
-        )
+    # Check prefs now (needs DB), then fire external sends in background
+    send_email = await _get_pref(db, user_id, NotificationChannel.email)
+    send_sms = bool(patient_mobile) and await _get_pref(db, user_id, NotificationChannel.mobile)
 
-    if patient_mobile and await _get_pref(db, user_id, NotificationChannel.mobile):
-        refund_short = {"full_refund": "Full refund.", "partial_refund": "Partial refund.", "no_refund": "No refund."}.get(refund_policy, "")
-        await _send_sms(
-            patient_mobile,
-            f"[HMS] Your appointment has been cancelled. {refund_short} ID: {appointment_id[-8:]}",
-        )
+    refund_short = {"full_refund": "Full refund.", "partial_refund": "Partial refund.", "no_refund": "No refund."}.get(refund_policy, "")
+    email_html = f"""
+    <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:24px">
+      <h2 style="color:#f43f5e;margin-top:0">&#x274C; Appointment Cancelled</h2>
+      <p style="font-size:15px;line-height:1.6">{message}</p>
+      <p style="color:#94a3b8;font-size:12px">Appointment ID: {appointment_id}</p>
+      <hr style="border:none;border-top:1px solid #e5e9f0;margin:20px 0"/>
+      <p style="color:#94a3b8;font-size:12px;margin:0">Hospital Management System</p>
+    </div>
+    """
+    sms_text = f"[HMS] Your appointment has been cancelled. {refund_short} ID: {appointment_id[-8:]}"
+
+    async def _send_cancelled_externals():
+        if send_email:
+            await _send_email(user_email, f"HMS — {title}", email_html)
+        if send_sms:
+            await _send_sms(patient_mobile, sms_text)
+
+    asyncio.create_task(_send_cancelled_externals())

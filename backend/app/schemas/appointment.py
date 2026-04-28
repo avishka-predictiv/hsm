@@ -45,6 +45,7 @@ class AppointmentOut(BaseModel):
     booked_at: datetime
     symptoms_text: Optional[str] = None
     terms_accepted: bool
+    consultation_fee: Optional[float] = None
     diagnosis: Optional[DiagnosisOut] = None
     session: Optional["SessionOut"] = None
 
