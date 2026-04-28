@@ -19,6 +19,7 @@ export default function BookAppointment() {
   const { sessionId } = useParams();
   const [symptoms, setSymptoms] = useState("");
   const [terms, setTerms] = useState(false);
+  const [selectedSlot, setSelectedSlot] = useState(null);
   const [showPayModal, setShowPayModal] = useState(false);
   const [lastAppointment, setLastAppointment] = useState(null);
 
@@ -37,6 +38,7 @@ export default function BookAppointment() {
         session_id: sessionId,
         symptoms_text: symptoms.trim() || null,
         terms_accepted: true,
+        selected_slot_number: selectedSlot,
       }).then((r) => r.data),
     onSuccess: (appt) => {
       setLastAppointment(appt);
@@ -77,7 +79,7 @@ export default function BookAppointment() {
           <div className="card card-p">
             <div style={{ fontWeight: 700, marginBottom: 6 }}>Select a Slot</div>
             <p style={{ fontSize: 13, color: "var(--ink-mute)", marginBottom: 14 }}>
-              Greyed slots are taken. The backend will assign the next available slot at booking time.
+              Tap an available slot to select it. Selected slot will be highlighted in blue.
             </p>
 
             {slots.length === 0 ? (
@@ -87,8 +89,10 @@ export default function BookAppointment() {
                 {slots.map((s) => (
                   <div
                     key={s.slot_number}
-                    className={`slot ${s.is_available ? "slot-available" : "slot-booked"}`}
+                    className={`slot ${s.is_available ? "slot-available" : "slot-booked"} ${selectedSlot === s.slot_number ? "slot-selected" : ""}`}
                     title={s.is_available ? `Slot #${s.slot_number} at ${s.start_time}` : "Booked"}
+                    onClick={() => s.is_available && setSelectedSlot(s.slot_number)}
+                    style={{ cursor: s.is_available ? "pointer" : "not-allowed" }}
                   >
                     <span style={{ fontSize: 15, fontWeight: 800 }}>#{s.slot_number}</span>
                     <span style={{ fontSize: 10, marginTop: 2 }}>{s.start_time}</span>
@@ -139,12 +143,21 @@ export default function BookAppointment() {
             <button
               type="button"
               className="btn btn-primary"
-              style={{ width: "100%", justifyContent: "center", padding: "12px", opacity: terms && hasAvailable ? 1 : 0.55 }}
-              disabled={!terms || !hasAvailable || bookMutation.isPending}
+              style={{ width: "100%", justifyContent: "center", padding: "12px", opacity: terms && selectedSlot ? 1 : 0.55 }}
+              disabled={!terms || !selectedSlot || bookMutation.isPending}
               onClick={() => bookMutation.mutate()}
             >
               <Ico n="calendar" size={15} /> Confirm &amp; Proceed to Payment
             </button>
+            {selectedSlot ? (
+              <p style={{ fontSize: 12, color: "var(--ink-mute)", marginTop: 8 }}>
+                Selected slot: #{selectedSlot}
+              </p>
+            ) : (
+              <p style={{ fontSize: 12, color: "var(--ink-mute)", marginTop: 8 }}>
+                Please select a slot before booking.
+              </p>
+            )}
           </div>
         </div>
       </div>

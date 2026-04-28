@@ -14,7 +14,7 @@ function DiagnosisModal({ appt, onClose }) {
           <button onClick={onClose} className="text-fg-subtle hover:text-fg"><X size={20} /></button>
         </div>
         <div className="grid grid-cols-2 gap-3 text-sm">
-          <div className="p-3 rounded-xl bg-subtle border border-line"><p className="text-fg-subtle">Date</p><p className="text-fg font-medium mt-0.5">—</p></div>
+          <div className="p-3 rounded-xl bg-subtle border border-line"><p className="text-fg-subtle">Date</p><p className="text-fg font-medium mt-0.5">{appt.session?.date ? format(new Date(appt.session.date), "MMMM d, yyyy") : appt.booked_at ? format(new Date(appt.booked_at), "MMMM d, yyyy") : "—"}</p></div>
           <div className="p-3 rounded-xl bg-subtle border border-line"><p className="text-fg-subtle">Slot</p><p className="text-fg font-medium mt-0.5">#{appt.slot_number}</p></div>
           <div className="p-3 rounded-xl bg-subtle border border-line"><p className="text-fg-subtle">Status</p><p className="text-fg font-medium mt-0.5 capitalize">{appt.status}</p></div>
         </div>
@@ -134,12 +134,13 @@ export default function MedicalHistory() {
 }
 
 function AppointmentRow({ appt, onClick }) {
+  const displayDate = appt.session?.date || appt.booked_at;
   return (
     <button onClick={onClick} className="w-full flex items-center gap-4 p-4 hover:bg-subtle text-left transition-colors">
       <div className="p-2.5 rounded-xl bg-primary-600/20 text-primary-400 flex-shrink-0"><FileText size={16} /></div>
       <div className="flex-1 min-w-0">
         <p className="font-medium text-fg text-sm">Appointment #{appt.slot_number}</p>
-        <p className="text-fg-subtle text-xs">{appt.booked_at ? format(new Date(appt.booked_at), "MMM d, yyyy") : "—"}</p>
+        <p className="text-fg-subtle text-xs">{displayDate ? format(new Date(displayDate), "MMM d, yyyy") : "—"}</p>
       </div>
       <span className={`badge ${appt.status === "completed" ? "badge-success" : "badge-neutral"}`}>{appt.status}</span>
       {appt.diagnosis?.ai_summary && <Sparkles size={14} className="text-violet-400 flex-shrink-0" />}
