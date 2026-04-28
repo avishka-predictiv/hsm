@@ -51,7 +51,7 @@ export default function FindDoctors() {
           <div style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}>
             <Ico n="search" size={15} color="var(--ink-mute)" />
           </div>
-          <input className="input" style={{ paddingLeft: 36 }} placeholder="Search by doctor email or bio…" value={search} onChange={(e) => setSearch(e.target.value)} />
+          <input className="input" style={{ paddingLeft: 36 }} placeholder="Search by doctor name, email or bio…" value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
 
         <div style={{ minWidth: 220 }}>
@@ -92,10 +92,10 @@ export default function FindDoctors() {
               {/* Top content grows to fill card — pushes button to bottom */}
               <div style={{ flex: 1 }}>
                 <div style={{ display: "flex", gap: 14, alignItems: "flex-start", marginBottom: 12 }}>
-                  <Avatar name={d.email?.split("@")[0]} email={d.email} size={52} radius={14} />
+                  <Avatar name={d.name || d.email?.split("@")[0]} email={d.email} size={52} radius={14} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontWeight: 750, fontSize: 15, marginBottom: 6, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {d.email ? d.email.split("@")[0].replace(/\./g, " ") : "Doctor"}
+                      {d.name || (d.email ? d.email.split("@")[0].replace(/\./g, " ") : "Doctor")}
                     </div>
                     {/* Fixed-height badge row — prevents card height variance */}
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 4, overflow: "hidden", maxHeight: 46 }}>

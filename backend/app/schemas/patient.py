@@ -4,6 +4,7 @@ from datetime import date, datetime
 
 
 class PatientProfileCreate(BaseModel):
+    name: Optional[str] = None
     nic: str
     mobile: str
     address: str
@@ -18,6 +19,7 @@ class PatientProfileCreate(BaseModel):
 
 
 class PatientProfileUpdate(BaseModel):
+    name: Optional[str] = None
     mobile: Optional[str] = None
     address: Optional[str] = None
     dob: Optional[date] = None
@@ -33,6 +35,7 @@ class PatientProfileUpdate(BaseModel):
 class PatientOut(BaseModel):
     id: str
     user_id: str
+    name: Optional[str] = None
     nic: str
     mobile: str
     address: str

@@ -42,11 +42,22 @@ export default function DoctorProfilePage() {
         )}
       </div>
 
-      {/* Profile fields */}
+      <div className="glass-card p-6 space-y-4">
+        <h3 className="text-sm font-semibold text-fg-muted uppercase tracking-wider">Personal Information</h3>
+        <div className="grid grid-cols-2 gap-4">
+          {[["Name", "name"], ["Mobile", "mobile"]].map(([label, name, type = "text"]) => (
+            <div key={name}>
+              <label className="input-label">{label}</label>
+              {editing ? <input type={type} name={name} value={form[name] || ""} onChange={e => setForm(prev => ({ ...prev, [name]: e.target.value }))} className="input-field" />
+                : <p className="py-2.5 px-4 text-sm text-fg-muted bg-subtle border border-line rounded-xl">{profile?.[name] || "—"}</p>}
+            </div>
+          ))}
+        </div>
+      </div>
       <div className="glass-card p-6 space-y-4">
         <h3 className="text-sm font-semibold text-fg-muted uppercase tracking-wider">Professional Information</h3>
         <div className="grid grid-cols-2 gap-4">
-          {[["Mobile", "mobile"], ["Years Experience", "years_experience", "number"], ["Consultation Fee (LKR)", "consultation_fee", "number"], ["Hospital Affiliation", "affiliation"]].map(([label, name, type = "text"]) => (
+          {[["Years Experience", "years_experience", "number"], ["Consultation Fee (LKR)", "consultation_fee", "number"], ["Hospital Affiliation", "affiliation"]].map(([label, name, type = "text"]) => (
             <div key={name}>
               <label className="input-label">{label}</label>
               {editing ? <input type={type} name={name} value={form[name] || ""} onChange={e => setForm(prev => ({ ...prev, [name]: e.target.value }))} className="input-field" />
