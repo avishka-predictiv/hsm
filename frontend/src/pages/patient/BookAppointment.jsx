@@ -19,6 +19,7 @@ export default function BookAppointment() {
   const { sessionId } = useParams();
   const [symptoms, setSymptoms] = useState("");
   const [terms, setTerms] = useState(false);
+  const [attachments, setAttachments] = useState([]);
   const [showPayModal, setShowPayModal] = useState(false);
   const [lastAppointment, setLastAppointment] = useState(null);
 
@@ -35,6 +36,14 @@ export default function BookAppointment() {
   const hasAvailable = slots.some((s) => s.is_available);
   const nextSlot = slots.find((s) => s.is_available)?.slot_number ?? null;
 
+  const handleAttachmentsChange = (event) => {
+    setAttachments(Array.from(event.target.files || []));
+  };
+
+  const removeAttachment = (index) => {
+    setAttachments((current) => current.filter((_, i) => i !== index));
+  };
+
   const bookMutation = useMutation({
     mutationFn: () =>
       appointmentApi.book({
@@ -42,11 +51,22 @@ export default function BookAppointment() {
         symptoms_text: symptoms.trim() || null,
         terms_accepted: true,
       }).then((r) => r.data),
-    onSuccess: (appt) => {
+    onSuccess: async (appt) => {
       setLastAppointment(appt);
       setShowPayModal(true);
       qc.invalidateQueries({ queryKey: ["upcoming-appts"] });
       qc.invalidateQueries({ queryKey: ["session-slots", sessionId] });
+
+      if (attachments.length > 0) {
+        try {
+          await Promise.all(
+            attachments.map((file) => appointmentApi.uploadAttachment(appt.id, file))
+          );
+          toast.success("Uploaded medical reports successfully");
+        } catch (uploadError) {
+          toast.error("Some files could not be uploaded");
+        }
+      }
     },
     onError: (e) => {
       toast.error(e?.response?.data?.detail || "Booking failed");
@@ -76,91 +96,129 @@ export default function BookAppointment() {
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 360px", gap: 24 }}>
-        {/* Left */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-          <div className="card card-p">
-            <div style={{ fontWeight: 700, marginBottom: 6 }}>Booked by order of arrival</div>
-            <p style={{ fontSize: 13, color: "var(--ink-mute)", marginBottom: 14 }}>
-              The system assigns the next available slot automatically. Patients cannot change the slot number.
-            </p>
+      <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+        <div className="card card-p">
+          <div style={{ fontWeight: 700, marginBottom: 6 }}>Booked by order of arrival</div>
+          <p style={{ fontSize: 13, color: "var(--ink-mute)", marginBottom: 14 }}>
+            The system assigns the next available slot automatically. Patients cannot change the slot number.
+          </p>
 
-            {slots.length === 0 ? (
-              <EmptyState icon="calendar" title="No slots available" desc="Try another session." />
-            ) : (
-              <div className="slot-grid">
-                {slots.map((s) => (
+          {slots.length === 0 ? (
+            <EmptyState icon="calendar" title="No slots available" desc="Try another session." />
+          ) : (
+            <div className="slot-grid">
+              {slots.map((s) => (
+                <div
+                  key={s.slot_number}
+                  className={`slot ${s.is_available ? "slot-available" : "slot-booked"} ${s.slot_number === nextSlot ? "slot-selected" : ""}`}
+                  title={s.is_available ? `Slot #${s.slot_number} at ${s.start_time}` : "Booked"}
+                  style={{ cursor: "default" }}
+                >
+                  <span style={{ fontSize: 15, fontWeight: 800 }}>#{s.slot_number}</span>
+                  <span style={{ fontSize: 10, marginTop: 2 }}>{s.start_time}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="card card-p">
+          <div style={{ fontWeight: 700, marginBottom: 14 }}>Consultation Details</div>
+          <div style={{ marginBottom: 14 }}>
+            <label className="label">Symptoms / Reason for visit</label>
+            <textarea className="input" rows={5} placeholder="Describe your symptoms…" value={symptoms} onChange={(e) => setSymptoms(e.target.value)} />
+          </div>
+
+          <div style={{ marginBottom: 14 }}>
+            <label className="label">Upload lab reports, scans, and X-rays</label>
+            <input
+              type="file"
+              accept=".pdf,.jpg,.jpeg,.png"
+              multiple
+              onChange={handleAttachmentsChange}
+              className="input"
+              style={{ paddingTop: 10, paddingBottom: 10 }}
+            />
+            {attachments.length > 0 ? (
+              <div style={{ marginTop: 12, display: "grid", gap: 8 }}>
+                {attachments.map((file, index) => (
                   <div
-                    key={s.slot_number}
-                    className={`slot ${s.is_available ? "slot-available" : "slot-booked"} ${s.slot_number === nextSlot ? "slot-selected" : ""}`}
-                    title={s.is_available ? `Slot #${s.slot_number} at ${s.start_time}` : "Booked"}
-                    style={{ cursor: "default" }}
+                    key={`${file.name}-${index}`}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "10px 12px",
+                      borderRadius: 12,
+                      border: "1px solid var(--border)",
+                      background: "var(--surface)"
+                    }}
                   >
-                    <span style={{ fontSize: 15, fontWeight: 800 }}>#{s.slot_number}</span>
-                    <span style={{ fontSize: 10, marginTop: 2 }}>{s.start_time}</span>
+                    <span style={{ fontSize: 13, color: "var(--ink)" }}>{file.name}</span>
+                    <button
+                      type="button"
+                      className="btn-ghost btn-icon"
+                      onClick={() => removeAttachment(index)}
+                      aria-label={`Remove ${file.name}`}
+                    >
+                      <Ico n="x" size={16} />
+                    </button>
                   </div>
                 ))}
               </div>
+            ) : (
+              <p style={{ marginTop: 10, fontSize: 12, color: "var(--ink-mute)" }}>
+                Add medical reports or imaging files to help the doctor review your case faster.
+              </p>
             )}
           </div>
-        </div>
 
-        {/* Right */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-          <div className="card card-p">
-            <div style={{ fontWeight: 700, marginBottom: 14 }}>Consultation Details</div>
-            <div style={{ marginBottom: 14 }}>
-              <label className="label">Symptoms / Reason for visit</label>
-              <textarea className="input" rows={5} placeholder="Describe your symptoms…" value={symptoms} onChange={(e) => setSymptoms(e.target.value)} />
-            </div>
-
-            <div
-              style={{
-                background: "var(--muted)",
-                borderRadius: 12,
-                padding: "12px 14px",
-                display: "flex",
-                gap: 12,
-                alignItems: "flex-start",
-                marginBottom: 16,
-                border: `2px solid ${terms ? "rgba(5,150,105,.35)" : "var(--border)"}`,
-                transition: "border-color 150ms",
-              }}
-            >
-              <button
-                type="button"
-                className="btn-ghost btn-icon"
-                onClick={() => setTerms((t) => !t)}
-                aria-pressed={terms}
-                aria-label="Toggle terms acceptance"
-              >
-                <Ico n={terms ? "checkCircle" : "circle"} size={18} color={terms ? "var(--mint)" : "var(--ink-mute)"} />
-              </button>
-              <div>
-                <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 2 }}>I accept the Terms &amp; Conditions</div>
-                <div style={{ fontSize: 12, color: "var(--ink-mute)" }}>Cancellations within 24 hours may not be eligible for a full refund.</div>
-              </div>
-            </div>
-
+          <div
+            style={{
+              background: "var(--muted)",
+              borderRadius: 12,
+              padding: "12px 14px",
+              display: "flex",
+              gap: 12,
+              alignItems: "flex-start",
+              marginBottom: 16,
+              border: `2px solid ${terms ? "rgba(5,150,105,.35)" : "var(--border)"}`,
+              transition: "border-color 150ms",
+            }}
+          >
             <button
               type="button"
-              className="btn btn-primary"
-              style={{ width: "100%", justifyContent: "center", padding: "12px", opacity: terms && hasAvailable ? 1 : 0.55 }}
-              disabled={!terms || !hasAvailable || bookMutation.isPending}
-              onClick={() => bookMutation.mutate()}
+              className="btn-ghost btn-icon"
+              onClick={() => setTerms((t) => !t)}
+              aria-pressed={terms}
+              aria-label="Toggle terms acceptance"
             >
-              <Ico n="calendar" size={15} /> Confirm &amp; Proceed to Payment
+              <Ico n={terms ? "checkCircle" : "circle"} size={18} color={terms ? "var(--mint)" : "var(--ink-mute)"} />
             </button>
-            {nextSlot ? (
-              <p style={{ fontSize: 12, color: "var(--ink-mute)", marginTop: 8 }}>
-                Your assigned slot will be <strong>#{nextSlot}</strong>.
-              </p>
-            ) : (
-              <p style={{ fontSize: 12, color: "var(--ink-mute)", marginTop: 8 }}>
-                No available slots remain for this session.
-              </p>
-            )}
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 2 }}>I accept the Terms &amp; Conditions</div>
+              <div style={{ fontSize: 12, color: "var(--ink-mute)" }}>Cancellations within 24 hours may not be eligible for a full refund.</div>
+            </div>
           </div>
+
+          <button
+            type="button"
+            className="btn btn-primary"
+            style={{ width: "100%", justifyContent: "center", padding: "12px", opacity: terms && hasAvailable ? 1 : 0.55 }}
+            disabled={!terms || !hasAvailable || bookMutation.isPending}
+            onClick={() => bookMutation.mutate()}
+          >
+            <Ico n="calendar" size={15} /> Confirm &amp; Proceed to Payment
+          </button>
+          {nextSlot ? (
+            <p style={{ fontSize: 12, color: "var(--ink-mute)", marginTop: 8 }}>
+              Your assigned slot will be <strong>#{nextSlot}</strong>.
+            </p>
+          ) : (
+            <p style={{ fontSize: 12, color: "var(--ink-mute)", marginTop: 8 }}>
+              No available slots remain for this session.
+            </p>
+          )}
         </div>
       </div>
 
