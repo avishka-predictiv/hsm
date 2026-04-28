@@ -68,6 +68,8 @@ export default function MedReasonerModal({
   onSaveAsDiagnosis,
 }) {
   const iframeRef = useRef(null);
+  const saveRequestedRef = useRef(false);
+  const initSentRef = useRef(false);
   const [iframeReady, setIframeReady] = useState(false);
   const [sessionId, setSessionId] = useState(initialSessionId);
   const [iframeKey, setIframeKey] = useState(0);
@@ -104,6 +106,8 @@ export default function MedReasonerModal({
     if (!open) return;
     setIframeReady(false);
     setSessionId(initialSessionId || "");
+    saveRequestedRef.current = false;
+    initSentRef.current = false;
   }, [open, appt?.appointment_id, initialSessionId]);
 
   // Listen for messages from the embedded chat
@@ -126,6 +130,12 @@ export default function MedReasonerModal({
       switch (data.type) {
         case "ready": {
           setIframeReady(true);
+          // Send initial case context once per open. (The iframe may trigger both
+          // "ready" and the onLoad fallback; without this guard the prompt can
+          // be injected repeatedly, causing duplicate runs.)
+          if (initSentRef.current) break;
+          initSentRef.current = true;
+
           // Send initial case context once the chat tells us it's ready
           iframeRef.current?.contentWindow?.postMessage(
             {
@@ -151,6 +161,12 @@ export default function MedReasonerModal({
           break;
         case "diagnosis":
           if (data.text) {
+            // The embedded app may emit "diagnosis" updates while chatting.
+            // Only treat it as a "Save as Diagnosis" action when we explicitly requested it
+            // (via the button in this modal), otherwise keep the window open.
+            if (!saveRequestedRef.current) return;
+            saveRequestedRef.current = false;
+
             onSaveAsDiagnosis?.({
               text: data.text,
               sessionId: data.sessionId || sessionId || "",
@@ -177,6 +193,7 @@ export default function MedReasonerModal({
     } catch {
       chatOrigin = "*";
     }
+    saveRequestedRef.current = true;
     iframeRef.current?.contentWindow?.postMessage(
       { source: "hms", type: "request-save" },
       chatOrigin
@@ -287,7 +304,8 @@ export default function MedReasonerModal({
             onLoad={() => {
               // Fallback: if the chat app doesn't post a "ready" message,
               // assume it's loaded after onLoad fires and try to init anyway.
-              if (!iframeReady) {
+              if (!iframeReady && !initSentRef.current) {
+                initSentRef.current = true;
                 let chatOrigin;
                 try {
                   chatOrigin = new URL(MEDREASONER_UI).origin;
