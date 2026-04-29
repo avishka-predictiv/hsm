@@ -21,20 +21,17 @@ function PatientPanel({ patient, appt, attachments, appointmentId, onPreview }) 
   return (
     <div className="space-y-4">
       {/* Patient header */}
-      <div className="flex items-center gap-3">
-        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center text-lg font-bold text-white">
-          {(patient?.email || "P")[0].toUpperCase()}
-        </div>
-        <div>
-          <p className="font-bold text-fg">{patient?.email || "—"}</p>
-          <p className="text-fg-subtle text-sm">NIC: {patient?.nic}</p>
-        </div>
+      <div>
+        <p className="font-bold text-fg text-lg">{patient?.name || "Patient"}</p>
+        <p className="text-fg-subtle text-sm">NIC: {patient?.nic || "—"}</p>
       </div>
 
       {/* Quick stats */}
       <div className="grid grid-cols-2 gap-2">
         {[
           ["Blood Group", patient?.blood_group || "—"],
+          ["Weight", patient?.weight ? `${patient.weight} kg` : "—"],
+          ["Height", patient?.height ? `${patient.height} cm` : "—"],
           ["Mobile", patient?.mobile || "—"],
           ["Allergies", patient?.known_allergies || "None"],
           ["Chronic", patient?.chronic_conditions || "None"],
@@ -240,7 +237,7 @@ export default function CurrentSession() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-fg truncate">
-                      {p.patient?.email?.split("@")[0] || "Patient"}
+                      {p.patient?.name || p.patient?.email?.split("@")[0] || "Patient"}
                     </p>
                     <p className="text-xs text-fg-subtle">
                       NIC: {p.patient?.nic?.slice(0, 8) || "—"}...
@@ -265,7 +262,7 @@ export default function CurrentSession() {
         {selected ? (
           <div className="flex-1 flex gap-4 min-w-0">
             {/* Left: Patient profile */}
-            <div className="flex-1 glass-card p-6 overflow-y-auto">
+            <div className="w-[38%] glass-card p-6 overflow-y-auto">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-bold text-fg">Patient Profile</h3>
                 <button
@@ -285,7 +282,7 @@ export default function CurrentSession() {
             </div>
 
             {/* Right: Diagnosis form */}
-            <div className="w-96 flex-shrink-0 glass-card p-6 overflow-y-auto">
+            <div className="flex-1 glass-card p-6 overflow-y-auto">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-bold text-fg">Diagnosis Entry</h3>
                 <span className="badge badge-info">
@@ -377,6 +374,7 @@ function DiagnosisFormController({
 }) {
   const qc = useQueryClient();
   const apptId = appt?.appointment_id;
+  const symptomsRef = useRef(null);
 
   const [form, setForm] = useState({
     symptoms_observed: "",
@@ -413,7 +411,16 @@ function DiagnosisFormController({
       onConsumeMedReasoner?.();
     }
   }, [pendingMedReasoner, onConsumeMedReasoner]);
+  const resizeSymptomsTextarea = () => {
+    const textarea = symptomsRef.current;
+    if (!textarea) return;
+    textarea.style.height = "auto";
+    textarea.style.height = `${textarea.scrollHeight}px`;
+  };
 
+  useEffect(() => {
+    resizeSymptomsTextarea();
+  }, [form.symptoms_observed, apptId]);
   // Persist MedReasoner output immediately (draft) so it isn't lost.
   // Backend is configured to NOT mark appointment completed unless doctor diagnosis is provided.
   const { mutate: saveMedReasonerDraft, isPending: isSavingMedReasonerDraft } = useMutation({
@@ -477,11 +484,15 @@ function DiagnosisFormController({
       <div>
         <label className="input-label">Symptoms Observed</label>
         <textarea
+          ref={symptomsRef}
           name="symptoms_observed"
           value={form.symptoms_observed}
-          onChange={handle}
-          className="input-field"
-          rows={2}
+          onChange={(e) => {
+            handle(e);
+            resizeSymptomsTextarea();
+          }}
+          className="input-field min-h-[170px] resize-none overflow-hidden"
+          rows={5}
           placeholder="Clinical observations..."
         />
         <button

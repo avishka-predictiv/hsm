@@ -52,6 +52,8 @@ function ProfileTab() {
           {field("Date of Birth", "dob", "date")}
           {field("Gender", "gender")}
           {field("Blood Group", "blood_group")}
+          {field("Weight (kg)", "weight", "number")}
+          {field("Height (cm)", "height", "number")}
         </div>
         {field("Address", "address")}
       </Section>

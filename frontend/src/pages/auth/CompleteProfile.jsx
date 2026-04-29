@@ -8,7 +8,7 @@ import toast from "react-hot-toast";
 import ThemeToggle from "../../components/ThemeToggle";
 
 function PatientForm({ onSubmit, loading }) {
-  const [form, setForm] = useState({ name: "", nic: "", mobile: "", address: "", dob: "", gender: "", blood_group: "", emergency_contact_name: "", emergency_contact_phone: "", known_allergies: "" });
+  const [form, setForm] = useState({ name: "", nic: "", mobile: "", address: "", dob: "", gender: "", blood_group: "", emergency_contact_name: "", emergency_contact_phone: "", weight: "", height: "", known_allergies: "" });
   const handle = (e) => setForm(p => ({ ...p, [e.target.name]: e.target.value }));
   return (
     <form onSubmit={e => { e.preventDefault(); onSubmit(form); }} className="space-y-4">
@@ -41,6 +41,10 @@ function PatientForm({ onSubmit, loading }) {
       <div className="grid grid-cols-2 gap-4">
         <div><label className="input-label">Emergency Contact Phone</label><input name="emergency_contact_phone" value={form.emergency_contact_phone} onChange={handle} className="input-field" /></div>
         <div><label className="input-label">Known Allergies</label><input name="known_allergies" value={form.known_allergies} onChange={handle} className="input-field" placeholder="e.g. Penicillin" /></div>
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <div><label className="input-label">Weight (kg)</label><input type="number" min="0" step="0.1" name="weight" value={form.weight} onChange={handle} className="input-field" placeholder="e.g. 68.5" /></div>
+        <div><label className="input-label">Height (cm)</label><input type="number" min="0" step="0.1" name="height" value={form.height} onChange={handle} className="input-field" placeholder="e.g. 172" /></div>
       </div>
       <button type="submit" disabled={loading} className="btn-primary w-full justify-center py-3">
         {loading ? "Saving..." : "Complete Patient Profile"}
