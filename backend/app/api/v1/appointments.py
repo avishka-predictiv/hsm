@@ -274,35 +274,43 @@ async def cancel_appointment(
 @router.post("/{appointment_id}/attachments")
 async def upload_attachment(
     appointment_id: str,
-    file: UploadFile = File(...),
+    files: List[UploadFile] = File(...),
     current_user: User = Depends(require_role("patient")),
     db: AsyncSession = Depends(get_db),
 ):
-    """Upload a medical report attachment for an appointment."""
+    """Upload one or more medical report attachments for an appointment."""
     result = await db.execute(select(Appointment).where(Appointment.id == appointment_id))
     appt = result.scalar_one_or_none()
     if not appt:
         raise HTTPException(status_code=404, detail="Appointment not found")
 
+    if not files:
+        raise HTTPException(status_code=400, detail="No files uploaded")
+
     upload_dir = os.path.join(settings.UPLOAD_DIR, "appointments", appointment_id)
     os.makedirs(upload_dir, exist_ok=True)
-    file_id = str(uuid.uuid4())
-    ext = os.path.splitext(file.filename or "file")[1]
-    file_path = os.path.join(upload_dir, f"{file_id}{ext}")
 
-    async with aiofiles.open(file_path, "wb") as f:
-        content = await file.read()
-        await f.write(content)
+    uploaded = []
+    for file_item in files:
+        file_id = str(uuid.uuid4())
+        ext = os.path.splitext(file_item.filename or "file")[1]
+        file_path = os.path.join(upload_dir, f"{file_id}{ext}")
 
-    attachment = AppointmentAttachment(
-        appointment_id=appointment_id,
-        file_path=file_path,
-        file_type=file.content_type,
-        original_name=file.filename,
-    )
-    db.add(attachment)
+        async with aiofiles.open(file_path, "wb") as f:
+            content = await file_item.read()
+            await f.write(content)
+
+        attachment = AppointmentAttachment(
+            appointment_id=appointment_id,
+            file_path=file_path,
+            file_type=file_item.content_type,
+            original_name=file_item.filename,
+        )
+        db.add(attachment)
+        uploaded.append({"original_name": file_item.filename, "file_path": file_path})
+
     await db.flush()
-    return {"message": "File uploaded", "file_path": file_path}
+    return {"message": "Files uploaded", "count": len(uploaded), "files": uploaded}
 
 
 @router.get("/slots/{session_id}", response_model=List[SlotInfo])

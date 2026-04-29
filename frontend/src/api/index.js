@@ -73,9 +73,13 @@ export const appointmentApi = {
   upcoming: () => api.get("/appointments/upcoming"),
   history: () => api.get("/appointments/history"),
   slots: (sessionId) => api.get(`/appointments/slots/${sessionId}`),
-  uploadAttachment: (id, file) => {
+  uploadAttachment: (id, files) => {
     const fd = new FormData();
-    fd.append("file", file);
+    if (Array.isArray(files)) {
+      files.forEach((file) => fd.append("files", file));
+    } else {
+      fd.append("files", files);
+    }
     return api.post(`/appointments/${id}/attachments`, fd, { headers: { "Content-Type": "multipart/form-data" } });
   },
 };

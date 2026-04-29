@@ -42,7 +42,17 @@ export default function BookAppointment() {
   const nextSlot = slots.find((s) => s.is_available)?.slot_number ?? null;
 
   const handleAttachmentsChange = (event) => {
-    setAttachments(Array.from(event.target.files || []));
+    const newFiles = Array.from(event.target.files || []);
+    setAttachments((current) => {
+      const combined = [...current, ...newFiles];
+      const seen = new Set();
+      return combined.filter((file) => {
+        const key = `${file.name}:${file.size}:${file.lastModified}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+    });
   };
 
   const removeAttachment = (index) => {
@@ -66,9 +76,7 @@ export default function BookAppointment() {
 
       if (attachments.length > 0) {
         try {
-          await Promise.all(
-            attachments.map((file) => appointmentApi.uploadAttachment(appt.id, file))
-          );
+          await appointmentApi.uploadAttachment(appt.id, attachments);
           toast.success("Uploaded medical reports successfully");
         } catch {
           toast.error("Some files could not be uploaded");
@@ -145,10 +153,10 @@ export default function BookAppointment() {
           </div>
 
           <div style={{ marginBottom: 14 }}>
-            <label className="label">Upload lab reports, scans, and X-rays</label>
+            <label className="label">Upload lab reports, scans, X-rays, or other medical files</label>
             <input
               type="file"
-              accept=".pdf,.jpg,.jpeg,.png"
+              accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.txt"
               multiple
               onChange={handleAttachmentsChange}
               className="input"
