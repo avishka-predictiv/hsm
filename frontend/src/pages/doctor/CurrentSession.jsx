@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { sessionApi } from "../../api";
+import Modal from "../../components/Modal";
+import { sessionApi, appointmentApi } from "../../api";
 import {
   ArrowLeft,
   ArrowRight,
@@ -16,24 +17,21 @@ import {
 import toast from "react-hot-toast";
 import MedReasonerModal from "../../components/MedReasonerModal";
 
-function PatientPanel({ patient, appt }) {
+function PatientPanel({ patient, appt, attachments, appointmentId, onPreview }) {
   return (
     <div className="space-y-4">
       {/* Patient header */}
-      <div className="flex items-center gap-3">
-        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center text-lg font-bold text-white">
-          {(patient?.email || "P")[0].toUpperCase()}
-        </div>
-        <div>
-          <p className="font-bold text-fg">{patient?.email || "—"}</p>
-          <p className="text-fg-subtle text-sm">NIC: {patient?.nic}</p>
-        </div>
+      <div>
+        <p className="font-bold text-fg text-lg">{patient?.name || "Patient"}</p>
+        <p className="text-fg-subtle text-sm">NIC: {patient?.nic || "—"}</p>
       </div>
 
       {/* Quick stats */}
       <div className="grid grid-cols-2 gap-2">
         {[
           ["Blood Group", patient?.blood_group || "—"],
+          ["Weight", patient?.weight ? `${patient.weight} kg` : "—"],
+          ["Height", patient?.height ? `${patient.height} cm` : "—"],
           ["Mobile", patient?.mobile || "—"],
           ["Allergies", patient?.known_allergies || "None"],
           ["Chronic", patient?.chronic_conditions || "None"],
@@ -54,6 +52,31 @@ function PatientPanel({ patient, appt }) {
           <p className="text-sm text-fg-muted">{appt.symptoms_text}</p>
         </div>
       )}
+
+      {/* Uploaded reports */}
+      <div className="p-4 rounded-xl bg-subtle border border-line">
+        <p className="text-xs font-semibold text-fg-muted uppercase tracking-wider mb-3">Uploaded Reports</p>
+        {attachments.length === 0 ? (
+          <p className="text-sm text-fg-subtle">No lab reports uploaded for this appointment.</p>
+        ) : (
+          <div className="space-y-2">
+            {attachments.map((att) => (
+              <button
+                key={att.id}
+                type="button"
+                onClick={() => onPreview(att)}
+                className="w-full text-left flex items-center justify-between gap-3 p-3 rounded-xl bg-white border border-line hover:bg-primary-50 transition-colors"
+              >
+                <div>
+                  <p className="text-sm font-medium text-fg">{att.original_name || "Attachment"}</p>
+                  <p className="text-xs text-fg-subtle">{att.file_type || "Unknown type"}</p>
+                </div>
+                <span className="text-xs text-primary-600">Preview</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Past diagnosis */}
       {appt?.has_diagnosis && (
@@ -96,6 +119,49 @@ export default function CurrentSession() {
   });
 
   const selected = selectedIndex !== null ? patients[selectedIndex] : null;
+
+  const [previewAttachment, setPreviewAttachment] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
+  const [previewType, setPreviewType] = useState(null);
+
+  const { data: attachments = [] } = useQuery({
+    queryKey: ["appointment-attachments", selected?.appointment_id],
+    queryFn: () => appointmentApi.attachments(selected?.appointment_id).then((r) => r.data),
+    enabled: !!selected?.appointment_id,
+  });
+
+  useEffect(() => {
+    return () => {
+      if (previewUrl) {
+        window.URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [previewUrl]);
+
+  const previewReport = async (attachment) => {
+    if (!selected?.appointment_id) return;
+    try {
+      const response = await appointmentApi.downloadAttachment(selected.appointment_id, attachment.id);
+      const blob = new Blob([response.data], {
+        type: response.headers["content-type"] || "application/octet-stream",
+      });
+      const url = window.URL.createObjectURL(blob);
+      setPreviewType(response.headers["content-type"] || "application/octet-stream");
+      setPreviewUrl(url);
+      setPreviewAttachment(attachment);
+    } catch (error) {
+      toast.error("Unable to preview report. Please refresh and try again.");
+    }
+  };
+
+  const closePreview = () => {
+    if (previewUrl) {
+      window.URL.revokeObjectURL(previewUrl);
+      setPreviewUrl(null);
+    }
+    setPreviewAttachment(null);
+    setPreviewType(null);
+  };
 
   const handleSaved = () => {
     setDiagnosedSet((p) => new Set([...p, selected?.appointment_id]));
@@ -171,7 +237,7 @@ export default function CurrentSession() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-fg truncate">
-                      {p.patient?.email?.split("@")[0] || "Patient"}
+                      {p.patient?.name || p.patient?.email?.split("@")[0] || "Patient"}
                     </p>
                     <p className="text-xs text-fg-subtle">
                       NIC: {p.patient?.nic?.slice(0, 8) || "—"}...
@@ -196,7 +262,7 @@ export default function CurrentSession() {
         {selected ? (
           <div className="flex-1 flex gap-4 min-w-0">
             {/* Left: Patient profile */}
-            <div className="flex-1 glass-card p-6 overflow-y-auto">
+            <div className="w-[38%] glass-card p-6 overflow-y-auto">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-bold text-fg">Patient Profile</h3>
                 <button
@@ -206,11 +272,17 @@ export default function CurrentSession() {
                   <X size={16} />
                 </button>
               </div>
-              <PatientPanel patient={selected.patient} appt={selected} />
+              <PatientPanel
+                patient={selected.patient}
+                appt={selected}
+                attachments={attachments}
+                appointmentId={selected.appointment_id}
+                onPreview={previewReport}
+              />
             </div>
 
             {/* Right: Diagnosis form */}
-            <div className="w-96 flex-shrink-0 glass-card p-6 overflow-y-auto">
+            <div className="flex-1 glass-card p-6 overflow-y-auto">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-bold text-fg">Diagnosis Entry</h3>
                 <span className="badge badge-info">
@@ -262,6 +334,32 @@ export default function CurrentSession() {
           onSaveAsDiagnosis={handleSaveMedReasoner}
         />
       )}
+
+      <Modal open={!!previewAttachment} onClose={closePreview} title={previewAttachment?.original_name || "Report Preview"} maxWidth={960}>
+        <div className="space-y-4">
+          {previewUrl ? (
+            previewType?.startsWith("image/") ? (
+              <img src={previewUrl} alt={previewAttachment?.original_name || "Preview"} className="w-full max-h-[75vh] object-contain" />
+            ) : previewType === "application/pdf" ? (
+              <iframe src={previewUrl} title="Report Preview" className="w-full h-[75vh] border border-line rounded-xl" />
+            ) : (
+              <div className="p-6 rounded-xl bg-subtle border border-line text-center">
+                <p className="text-fg-muted mb-4">Preview not supported for this file type.</p>
+                <a
+                  href={previewUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="btn-primary inline-flex items-center justify-center"
+                >
+                  Open in new tab
+                </a>
+              </div>
+            )
+          ) : (
+            <div className="p-8 text-center text-fg-subtle">Loading preview…</div>
+          )}
+        </div>
+      </Modal>
     </div>
   );
 }
@@ -276,6 +374,7 @@ function DiagnosisFormController({
 }) {
   const qc = useQueryClient();
   const apptId = appt?.appointment_id;
+  const symptomsRef = useRef(null);
 
   const [form, setForm] = useState({
     symptoms_observed: "",
@@ -312,7 +411,16 @@ function DiagnosisFormController({
       onConsumeMedReasoner?.();
     }
   }, [pendingMedReasoner, onConsumeMedReasoner]);
+  const resizeSymptomsTextarea = () => {
+    const textarea = symptomsRef.current;
+    if (!textarea) return;
+    textarea.style.height = "auto";
+    textarea.style.height = `${textarea.scrollHeight}px`;
+  };
 
+  useEffect(() => {
+    resizeSymptomsTextarea();
+  }, [form.symptoms_observed, apptId]);
   // Persist MedReasoner output immediately (draft) so it isn't lost.
   // Backend is configured to NOT mark appointment completed unless doctor diagnosis is provided.
   const { mutate: saveMedReasonerDraft, isPending: isSavingMedReasonerDraft } = useMutation({
@@ -376,11 +484,15 @@ function DiagnosisFormController({
       <div>
         <label className="input-label">Symptoms Observed</label>
         <textarea
+          ref={symptomsRef}
           name="symptoms_observed"
           value={form.symptoms_observed}
-          onChange={handle}
-          className="input-field"
-          rows={2}
+          onChange={(e) => {
+            handle(e);
+            resizeSymptomsTextarea();
+          }}
+          className="input-field min-h-[170px] resize-none overflow-hidden"
+          rows={5}
           placeholder="Clinical observations..."
         />
         <button

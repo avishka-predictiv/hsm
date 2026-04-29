@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime, date, timezone
-from sqlalchemy import String, Date, DateTime, ForeignKey, Text, Boolean
+from sqlalchemy import String, Date, DateTime, ForeignKey, Text, Boolean, Float
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID
 from app.core.database import Base
@@ -23,6 +23,8 @@ class Patient(Base):
     blood_group: Mapped[str | None] = mapped_column(String(10), nullable=True)
     emergency_contact_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
     emergency_contact_phone: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    weight: Mapped[float | None] = mapped_column(Float, nullable=True)
+    height: Mapped[float | None] = mapped_column(Float, nullable=True)
     known_allergies: Mapped[str | None] = mapped_column(Text, nullable=True)
     chronic_conditions: Mapped[str | None] = mapped_column(Text, nullable=True)
     insurance_info: Mapped[str | None] = mapped_column(Text, nullable=True)

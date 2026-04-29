@@ -13,6 +13,8 @@ class PatientProfileCreate(BaseModel):
     blood_group: Optional[str] = None
     emergency_contact_name: Optional[str] = None
     emergency_contact_phone: Optional[str] = None
+    weight: Optional[float] = None
+    height: Optional[float] = None
     known_allergies: Optional[str] = None
     chronic_conditions: Optional[str] = None
     insurance_info: Optional[str] = None
@@ -27,6 +29,8 @@ class PatientProfileUpdate(BaseModel):
     blood_group: Optional[str] = None
     emergency_contact_name: Optional[str] = None
     emergency_contact_phone: Optional[str] = None
+    weight: Optional[float] = None
+    height: Optional[float] = None
     known_allergies: Optional[str] = None
     chronic_conditions: Optional[str] = None
     insurance_info: Optional[str] = None
@@ -44,6 +48,8 @@ class PatientOut(BaseModel):
     blood_group: Optional[str] = None
     emergency_contact_name: Optional[str] = None
     emergency_contact_phone: Optional[str] = None
+    weight: Optional[float] = None
+    height: Optional[float] = None
     known_allergies: Optional[str] = None
     chronic_conditions: Optional[str] = None
     insurance_info: Optional[str] = None

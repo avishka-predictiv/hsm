@@ -162,10 +162,13 @@ async def get_session_patients(
             "status": appt.status,
             "patient": {
                 "id": patient.id,
+                "name": user.name if user else None,
                 "nic": patient.nic,
                 "email": user.email if user else None,
                 "mobile": patient.mobile,
                 "blood_group": patient.blood_group,
+                "weight": patient.weight,
+                "height": patient.height,
                 "known_allergies": patient.known_allergies,
                 "chronic_conditions": patient.chronic_conditions,
                 "dob": patient.dob.isoformat() if patient.dob else None,
