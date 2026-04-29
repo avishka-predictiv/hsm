@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
-import { Brain, X, Send, Save, Loader2, Sparkles, RotateCcw, GripHorizontal } from "lucide-react";
+import { Brain, X, Send, Save, Loader2, RotateCcw, GripHorizontal } from "lucide-react";
 import toast from "react-hot-toast";
 
 const MEDREASONER_API =
@@ -88,11 +88,6 @@ export default function MedReasonerChat({
   const dragRef = useRef({ dragging: false, startX: 0, startY: 0, baseX: 0, baseY: 0 });
 
   const messagesEndRef = useRef(null);
-
-  const initialPrompt = useMemo(
-    () => buildInitialPrompt({ patient, appt, observed: observedSymptoms }),
-    [patient, appt, observedSymptoms]
-  );
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -199,6 +194,11 @@ export default function MedReasonerChat({
       }
     },
     []
+  );
+
+  const initialPrompt = useMemo(
+    () => buildInitialPrompt({ patient, appt, observed: observedSymptoms }),
+    [patient, appt, observedSymptoms]
   );
 
   // Auto-send the initial patient context the first time the panel opens
