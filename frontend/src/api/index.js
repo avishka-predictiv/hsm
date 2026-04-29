@@ -82,6 +82,11 @@ export const appointmentApi = {
     }
     return api.post(`/appointments/${id}/attachments`, fd, { headers: { "Content-Type": "multipart/form-data" } });
   },
+  attachments: (id) => api.get(`/appointments/${id}/attachments`),
+  downloadAttachment: (appointmentId, attachmentId) =>
+    api.get(`/appointments/${appointmentId}/attachments/${attachmentId}`, {
+      responseType: "blob",
+    }),
 };
 
 export const sessionApi = {

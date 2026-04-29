@@ -52,6 +52,17 @@ class AppointmentOut(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class AppointmentAttachmentOut(BaseModel):
+    id: str
+    appointment_id: str
+    file_type: Optional[str] = None
+    original_name: Optional[str] = None
+    uploaded_at: datetime
+    download_url: str
+
+    model_config = {"from_attributes": True}
+
+
 class SessionOut(BaseModel):
     id: str
     doctor_id: str

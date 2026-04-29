@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Request
+from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload
@@ -13,7 +14,7 @@ from app.models.user import User
 from app.models.patient import Patient
 from app.models.doctor import Doctor
 from app.models.appointment import Appointment, AppointmentStatus, AppointmentAttachment, Session
-from app.schemas.appointment import AppointmentCreate, AppointmentOut, AppointmentCancelRequest, SlotInfo
+from app.schemas.appointment import AppointmentCreate, AppointmentOut, AppointmentCancelRequest, SlotInfo, AppointmentAttachmentOut
 from app.services import notification as notif_svc
 
 router = APIRouter(prefix="/appointments", tags=["Appointments"])
@@ -311,6 +312,85 @@ async def upload_attachment(
 
     await db.flush()
     return {"message": "Files uploaded", "count": len(uploaded), "files": uploaded}
+
+
+@router.get("/{appointment_id}/attachments", response_model=List[AppointmentAttachmentOut])
+async def list_appointment_attachments(
+    appointment_id: str,
+    request: Request,
+    current_user: User = Depends(require_role("patient", "doctor")),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(select(Appointment).where(Appointment.id == appointment_id))
+    appt = result.scalar_one_or_none()
+    if not appt:
+        raise HTTPException(status_code=404, detail="Appointment not found")
+
+    # Authorize patient owner or assigned doctor
+    if current_user.role == "patient":
+        pat_res = await db.execute(select(Patient).where(Patient.user_id == current_user.id))
+        patient = pat_res.scalar_one_or_none()
+        if not patient or patient.id != appt.patient_id:
+            raise HTTPException(status_code=403, detail="Not authorized")
+    else:
+        doc_res = await db.execute(select(Doctor).where(Doctor.user_id == current_user.id))
+        doctor = doc_res.scalar_one_or_none()
+        if not doctor or doctor.id != appt.doctor_id:
+            raise HTTPException(status_code=403, detail="Not authorized")
+
+    attachments_res = await db.execute(select(AppointmentAttachment).where(AppointmentAttachment.appointment_id == appointment_id))
+    attachments = attachments_res.scalars().all()
+    return [
+        AppointmentAttachmentOut(
+            id=a.id,
+            appointment_id=a.appointment_id,
+            file_type=a.file_type,
+            original_name=a.original_name,
+            uploaded_at=a.uploaded_at,
+            download_url=str(request.url_for("download_appointment_attachment", appointment_id=appointment_id, attachment_id=a.id)),
+        )
+        for a in attachments
+    ]
+
+
+@router.get("/{appointment_id}/attachments/{attachment_id}", name="download_appointment_attachment")
+async def download_appointment_attachment(
+    appointment_id: str,
+    attachment_id: str,
+    current_user: User = Depends(require_role("patient", "doctor")),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(select(Appointment).where(Appointment.id == appointment_id))
+    appt = result.scalar_one_or_none()
+    if not appt:
+        raise HTTPException(status_code=404, detail="Appointment not found")
+
+    if current_user.role == "patient":
+        pat_res = await db.execute(select(Patient).where(Patient.user_id == current_user.id))
+        patient = pat_res.scalar_one_or_none()
+        if not patient or patient.id != appt.patient_id:
+            raise HTTPException(status_code=403, detail="Not authorized")
+    else:
+        doc_res = await db.execute(select(Doctor).where(Doctor.user_id == current_user.id))
+        doctor = doc_res.scalar_one_or_none()
+        if not doctor or doctor.id != appt.doctor_id:
+            raise HTTPException(status_code=403, detail="Not authorized")
+
+    attachment_res = await db.execute(
+        select(AppointmentAttachment).where(
+            AppointmentAttachment.id == attachment_id,
+            AppointmentAttachment.appointment_id == appointment_id,
+        )
+    )
+    attachment = attachment_res.scalar_one_or_none()
+    if not attachment:
+        raise HTTPException(status_code=404, detail="Attachment not found")
+
+    return FileResponse(
+        path=attachment.file_path,
+        filename=attachment.original_name or os.path.basename(attachment.file_path),
+        media_type=attachment.file_type or "application/octet-stream",
+    )
 
 
 @router.get("/slots/{session_id}", response_model=List[SlotInfo])
